@@ -17,7 +17,6 @@ class TierListPlugin(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.logger = logging.getLogger(__name__)
-        self.logger.info("TierList plugin loaded")
         self.config_logger = self.logger.getChild("config")
         self._documentation = {
             self.tier_list_category: disnake.Embed(
@@ -29,6 +28,9 @@ class TierListPlugin(commands.Cog):
                 "instantly vaporized.",
             )
         }
+
+    async def cog_load(self):
+        self.logger.info("TierList plugin loaded")
 
     @commands.slash_command(name="tierlist")
     async def tier_list(self, ctx: disnake.ApplicationCommandInteraction):

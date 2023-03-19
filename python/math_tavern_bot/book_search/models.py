@@ -56,7 +56,7 @@ class Doc(BaseModel):
     ia_box_id: Optional[List[str]] = None
     publisher_facet: List[str]
     subject_facet: Optional[List[str]] = None
-    field_version_: int = Field(..., alias='_version_')
+    field_version_: int = Field(..., alias="_version_")
     lcc_sort: Optional[str] = None
     author_facet: List[str]
     subject_key: Optional[List[str]] = None

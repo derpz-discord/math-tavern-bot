@@ -1,7 +1,12 @@
 import logging
+import pprint
+from sqlite3 import OperationalError
 
 import disnake
 from disnake.ext import commands
+from sqlalchemy import text
+
+from math_tavern_bot import KvStoredBot
 
 
 class ConfigPlugin(commands.Cog):
@@ -10,10 +15,11 @@ class ConfigPlugin(commands.Cog):
     (also allows for arbitrary SQL execution)
     """
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: KvStoredBot):
         self.bot = bot
         self.logger = logging.getLogger(__name__)
 
+    async def cog_load(self) -> None:
         self.logger.info("Config plugin loaded")
 
     @commands.command(name="plugins")
@@ -27,9 +33,9 @@ class ConfigPlugin(commands.Cog):
 
     @config.sub_command()
     async def unload_plugin(
-        self,
-        ctx: disnake.ApplicationCommandInteraction,
-        plugin: str = commands.Param(description="The plugin to unload"),
+            self,
+            ctx: disnake.ApplicationCommandInteraction,
+            plugin: str = commands.Param(description="The plugin to unload"),
     ):
         if plugin in self.bot.cogs:
             self.bot.remove_cog(plugin)
@@ -37,7 +43,7 @@ class ConfigPlugin(commands.Cog):
         else:
             await ctx.send(f"Plugin {plugin} not loaded")
 
-    @commands.command()
+    @commands.command(aliases=['sqlexec'])
     @commands.is_owner()
     async def sql_exec(self, ctx: commands.Context):
         """
@@ -59,7 +65,21 @@ class ConfigPlugin(commands.Cog):
 
         # remove the ```sql and ``` from the message
         query = msg.content[6:-3]
-        await ctx.send(f"Executing SQL query")
+        # strip the query of any whitespace
+        query = query.strip()
+
+        # execute with the database connection
+        orig = await ctx.send(f"Executing SQL query, please wait.")
+        async with self.bot.db.connect() as conn:
+            try:
+                result = await conn.execute(text(query))
+                result = result.fetchall()
+            except Exception as e:
+                await orig.edit(f"There was an error executing your query. "
+                                f"I have DMed you the error")
+                await ctx.author.send(pprint.pformat(e))
+                raise e
+            await orig.edit(f"Result: \n```\n{pprint.pp(result)}\n```")
 
     @commands.command(name="eval")
     @commands.is_owner()
@@ -83,6 +103,13 @@ class ConfigPlugin(commands.Cog):
 
         # remove the ```python and ``` from the message
         code = msg.content[9:-3]
-        await ctx.send(f"Executing Python code")
-        result = eval(code)
-        await ctx.send(f"Result: \n```\n{result}\n```")
+        orig = await ctx.send(f"Executing Python code")
+        try:
+            result = eval(code)
+        except Exception as e:
+            await orig.edit(f"There was an error executing your code. "
+                            f"I have DMed you the error")
+            await ctx.author.send(pprint.pformat(e))
+
+            raise e
+        await orig.edit(f"Result: \n```\n{result}\n```")

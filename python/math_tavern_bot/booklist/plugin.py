@@ -4,6 +4,7 @@ from typing import Optional
 import disnake
 from disnake.ext import commands
 
+from math_tavern_bot import DatabasedBot
 from math_tavern_bot.booklist.search import SearchView
 from math_tavern_bot.booklist.upload import UploadView
 
@@ -13,7 +14,7 @@ class BookListPlugin(commands.Cog):
     Cog for managing a book list channel.
     """
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: DatabasedBot):
         self.bot = bot
         self.logger = logging.getLogger(__name__)
         # TODO: Surely there's a better way to do this
@@ -30,6 +31,7 @@ class BookListPlugin(commands.Cog):
         # TODO: Add a database to store the book list channel
         self._book_list_channel: Optional[disnake.TextChannel] = None
 
+    async def cog_load(self):
         self.logger.info("BookList plugin loaded")
 
     @commands.slash_command(name="booklist")

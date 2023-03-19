@@ -1,43 +1,39 @@
-import logging
-
 import disnake
 import sentry_sdk
 from disnake.ext import commands
 from disnake.ext.commands import errors, Context
+from sqlalchemy.ext.asyncio import create_async_engine
 
+from math_tavern_bot import KvStoredBot
+from math_tavern_bot.book_search import BookSearchPlugin
 from math_tavern_bot.booklist import BookListPlugin
 from math_tavern_bot.config.plugin import ConfigPlugin
-from math_tavern_bot.book_search import BookSearchPlugin
 from math_tavern_bot.plugin_pin import PinMessagePlugin
 from math_tavern_bot.tierlist import TierListPlugin
 
 
+# TODO:
 class BotHelp(commands.HelpCommand):
     async def send_bot_help(self, mapping):
         embed = disnake.Embed(title="Help")
 
 
-class BookBot(commands.Bot):
-    def __init__(self, *args, **options):
+class BookBot(KvStoredBot):
+    def __init__(self, *args, db_url: str, **options):
+        engine = create_async_engine(db_url)
         super().__init__(
+            database=engine,
             command_prefix=".",
             intents=disnake.Intents.all(),
             test_guilds=[1072179290671685753, 1073267404110561353],
         )
-        self.logger = logging.getLogger(__name__)
-        # TODO: Do not hardcode
-        logging.getLogger("disnake").setLevel(logging.WARNING)
-        self.configure_logging()
+
         self.add_cog(BookListPlugin(self))
         self.add_cog(TierListPlugin(self))
         # self.add_cog(AutoSullyPlugin(self))
         self.add_cog(PinMessagePlugin(self))
         self.add_cog(ConfigPlugin(self))
         self.add_cog(BookSearchPlugin(self))
-
-    def configure_logging(self):
-        logging.basicConfig(level=logging.INFO)
-        self.logger.info("Hello world!")
 
     def setup_sentry(self, sentry_dsn: str, *, trace_sample_rate: float = 0.4):
         sentry_sdk.init(dsn=sentry_dsn, traces_sample_rate=trace_sample_rate)

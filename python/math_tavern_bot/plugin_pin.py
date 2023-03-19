@@ -1,20 +1,31 @@
 import logging
-from typing import Optional
 
 import disnake
 from disnake.ext import commands
 
+from math_tavern_bot import KvStoredBot
+from math_tavern_bot.config.models import CogConfiguration
 from math_tavern_bot.utils import fmt_user
 
 
+class PinConfig(CogConfiguration):
+    who_can_pin: set[int] = set()
+
+
 class PinMessagePlugin(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: KvStoredBot):
         self.bot = bot
         self.logger = logging.getLogger(__name__)
-        # TODO: Load from DB
-        self._can_pin_roles: set[disnake.Role] = set()
+        self.config: PinConfig = PinConfig()
 
+    async def cog_load(self) -> None:
         self.logger.info("PinMessage plugin loaded")
+        # load config from DB
+        config = await self.bot.cog_config_store.get_cog_config(self)
+        if config:
+            self.config = PinConfig.parse_obj(config)
+        else:
+            await self.bot.cog_config_store.set_cog_config(self, self.config)
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
         if isinstance(error, commands.CommandInvokeError):
@@ -39,8 +50,8 @@ class PinMessagePlugin(commands.Cog):
         if not ctx.guild:
             await ctx.send("This command can only be used in a guild")
             return
-        self._can_pin_roles.add(role)
-        # TODO: Save to DB
+        self.config.who_can_pin.add(role.id)
+        await self.bot.cog_config_store.set_cog_config(self, self.config)
         await ctx.send(
             f"+ Added {role.name} to the list of roles that can pin messages"
         )
@@ -57,11 +68,11 @@ class PinMessagePlugin(commands.Cog):
         if not ctx.guild:
             await ctx.send("This command can only be used in a guild")
             return
-        if role not in self._can_pin_roles:
+        if role.id not in self.config.who_can_pin:
             await ctx.send("That role cannot pin messages")
             return
-        # TODO: Save to DB
-        self._can_pin_roles.remove(role)
+        self.config.who_can_pin.remove(role.id)
+        await self.bot.cog_config_store.set_cog_config(self, self.config)
         await ctx.send(
             f"- Removed {role.name} from the list of roles that can pin messages"
         )
@@ -72,7 +83,7 @@ class PinMessagePlugin(commands.Cog):
             await ctx.send("This command can only be used in a guild")
             return
         if not (
-            any(role in ctx.author.roles for role in self._can_pin_roles)
+            any(role in ctx.author.roles for role in self.config.who_can_pin)
             or ctx.author.guild_permissions.manage_messages
         ):
             await ctx.send("You do not have permission to pin messages")

@@ -5,9 +5,11 @@ from math_tavern_bot.bot import BookBot
 
 if __name__ == "__main__":
     load_dotenv()
-    bot = BookBot()
-    if getenv("DISCORD_TOKEN"):
-        bot.run(getenv("DISCORD_TOKEN"))
-    else:
-        bot.logger.error("No DISCORD_TOKEN found in environment variables.")
-        exit(1)
+    db_url = getenv("DATABASE_URL")
+    discord_token = getenv("DISCORD_TOKEN")
+    if not db_url:
+        raise ValueError("No DATABASE_URL found in environment variables.")
+    if not discord_token:
+        raise ValueError("No DISCORD_TOKEN found in environment variables.")
+    bot = BookBot(db_url=db_url)
+    bot.run(discord_token)

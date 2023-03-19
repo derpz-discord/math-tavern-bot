@@ -18,6 +18,7 @@ class AutoSullyPlugin(commands.Cog):
         self._sully_emoji: Optional[disnake.Emoji] = None
         self._sully_users: set[disnake.User] = set()
 
+    async def cog_load(self) -> None:
         self.logger.info("AutoSully plugin loaded")
 
     @commands.slash_command()
