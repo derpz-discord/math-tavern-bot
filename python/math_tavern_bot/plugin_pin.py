@@ -38,14 +38,13 @@ class PinMessagePlugin(commands.Cog):
             await ctx.send("An error occurred")
             raise error
 
-    # TODO: Change to slash command
-    @commands.command("add_pin_role")
+    @commands.slash_command()
     @commands.has_permissions(manage_roles=True)
     async def add_pin_role(
         self,
-        ctx: commands.Context,
+        ctx: disnake.ApplicationCommandInteraction,
         *,
-        role: disnake.Role = commands.Param(description="The role to add"),
+        role: disnake.Role = commands.Param(description="The role to give pin permissions to"),
     ):
         if not ctx.guild:
             await ctx.send("This command can only be used in a guild")
@@ -57,13 +56,13 @@ class PinMessagePlugin(commands.Cog):
         )
 
     # TODO: Change to slash command
-    @commands.command("remove_pin_role")
+    @commands.slash_command()
     @commands.has_permissions(manage_roles=True)
     async def remove_pin_role(
         self,
-        ctx: commands.Context,
+        ctx: disnake.ApplicationCommandInteraction,
         *,
-        role: disnake.Role = commands.Param(description="The role to remove"),
+        role: disnake.Role = commands.Param(description="The role to remove pin permissions from"),
     ):
         if not ctx.guild:
             await ctx.send("This command can only be used in a guild")
@@ -93,6 +92,29 @@ class PinMessagePlugin(commands.Cog):
             to_pin = ctx.message.reference.resolved
             await to_pin.pin(
                 reason=f"Pinned on behalf of {fmt_user(ctx.author)} (id: "
+                f"{ctx.author.id})"
+            )
+            # react to the message with a checkmark
+            await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        else:
+            await ctx.message.add_reaction("\N{CROSS MARK}")
+
+    @commands.command("unpin")
+    async def unpin_message(self, ctx: commands.Context):
+        if not ctx.guild:
+            await ctx.send("This command can only be used in a guild")
+            return
+        if not (
+            any(role in ctx.author.roles for role in self.config.who_can_pin)
+            or ctx.author.guild_permissions.manage_messages
+        ):
+            await ctx.send("You do not have permission to unpin messages")
+            return
+        # check what message the user is replying to and unpin that
+        if ctx.message.reference:
+            to_unpin = ctx.message.reference.resolved
+            await to_unpin.unpin(
+                reason=f"Unpinned on behalf of {fmt_user(ctx.author)} (id: "
                 f"{ctx.author.id})"
             )
             # react to the message with a checkmark
