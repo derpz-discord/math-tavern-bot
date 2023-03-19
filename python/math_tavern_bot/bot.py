@@ -7,6 +7,7 @@ from disnake.ext import commands
 
 from math_tavern_bot.booklist import BookListPlugin
 from math_tavern_bot.plugin_autosully import AutoSullyPlugin
+from math_tavern_bot.plugin_pin import PinMessagePlugin
 from math_tavern_bot.tierlist import TierListPlugin
 from math_tavern_bot.utils import fmt_user
 
@@ -14,7 +15,7 @@ from math_tavern_bot.utils import fmt_user
 class BookBot(commands.Bot):
     def __init__(self, *args, **options):
         super().__init__(
-            command_prefix="!",
+            command_prefix=".",
             intents=disnake.Intents.all(),
             test_guilds=[1072179290671685753, 1073267404110561353],
         )
@@ -24,6 +25,8 @@ class BookBot(commands.Bot):
         self.configure_logging()
         self.add_cog(BookListPlugin(self))
         self.add_cog(TierListPlugin(self))
+        # self.add_cog(AutoSullyPlugin(self))
+        self.add_cog(PinMessagePlugin(self))
 
     def configure_logging(self):
         logging.basicConfig(level=logging.INFO)

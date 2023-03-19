@@ -25,9 +25,15 @@ class AutoSullyPlugin(commands.Cog):
         pass
 
     @autosully.sub_command()
-    async def set_sully(self, ctx: disnake.ApplicationCommandInteraction,
-                        *, emoji: disnake.Emoji = commands.Param(
-                            description="The emoji to sully users with")):
+    @commands.has_permissions(manage_emojis=True)
+    async def set_sully(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        *,
+        emoji: disnake.Emoji = commands.Param(
+            description="The emoji to sully users with"
+        ),
+    ):
         if not ctx.guild:
             await ctx.send("This command can only be used in a guild")
             return
