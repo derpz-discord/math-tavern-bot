@@ -16,6 +16,7 @@ class BookListPlugin(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.logger = logging.getLogger(__name__)
+        # TODO: Surely there's a better way to do this
         self._documentation = {
             self.book_list_channel: disnake.Embed(
                 title="book_list_channel",
@@ -60,6 +61,13 @@ class BookListPlugin(commands.Cog):
             description="The channel which will be managed by the book list bot"
         ),
     ):
+        """
+        Sets the book list channel
+
+        :param ctx: :class:`disnake.ApplicationCommandInteraction` context
+        :param channel: The channel which will be managed by the book list bot
+        :return:
+        """
         await ctx.send(f"Setting the book list channel to {channel.mention}")
         self._book_list_channel = channel
 

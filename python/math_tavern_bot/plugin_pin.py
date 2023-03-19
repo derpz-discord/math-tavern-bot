@@ -31,10 +31,10 @@ class PinMessagePlugin(commands.Cog):
     @commands.command("add_pin_role")
     @commands.has_permissions(manage_roles=True)
     async def add_pin_role(
-            self,
-            ctx: commands.Context,
-            *,
-            role: disnake.Role = commands.Param(description="The role to add"),
+        self,
+        ctx: commands.Context,
+        *,
+        role: disnake.Role = commands.Param(description="The role to add"),
     ):
         if not ctx.guild:
             await ctx.send("This command can only be used in a guild")
@@ -49,10 +49,10 @@ class PinMessagePlugin(commands.Cog):
     @commands.command("remove_pin_role")
     @commands.has_permissions(manage_roles=True)
     async def remove_pin_role(
-            self,
-            ctx: commands.Context,
-            *,
-            role: disnake.Role = commands.Param(description="The role to remove"),
+        self,
+        ctx: commands.Context,
+        *,
+        role: disnake.Role = commands.Param(description="The role to remove"),
     ):
         if not ctx.guild:
             await ctx.send("This command can only be used in a guild")
@@ -71,8 +71,10 @@ class PinMessagePlugin(commands.Cog):
         if not ctx.guild:
             await ctx.send("This command can only be used in a guild")
             return
-        if not (any(role in ctx.author.roles for role in self._can_pin_roles)
-                or ctx.author.guild_permissions.manage_messages):
+        if not (
+            any(role in ctx.author.roles for role in self._can_pin_roles)
+            or ctx.author.guild_permissions.manage_messages
+        ):
             await ctx.send("You do not have permission to pin messages")
             return
         # check what message the user is replying to and pin that
@@ -80,7 +82,7 @@ class PinMessagePlugin(commands.Cog):
             to_pin = ctx.message.reference.resolved
             await to_pin.pin(
                 reason=f"Pinned on behalf of {fmt_user(ctx.author)} (id: "
-                       f"{ctx.author.id})"
+                f"{ctx.author.id})"
             )
             # react to the message with a checkmark
             await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
