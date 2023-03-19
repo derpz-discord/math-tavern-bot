@@ -11,11 +11,11 @@ class PinMessagePlugin(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.logger = logging.getLogger(__name__)
+        # TODO: Load from DB
         self._can_pin_roles: set[disnake.Role] = set()
 
         self.logger.info("PinMessage plugin loaded")
 
-    # error handler
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
         if isinstance(error, commands.CommandInvokeError):
             error = error.original
@@ -27,6 +27,7 @@ class PinMessagePlugin(commands.Cog):
             await ctx.send("An error occurred")
             raise error
 
+    # TODO: Change to slash command
     @commands.command("add_pin_role")
     @commands.has_permissions(manage_roles=True)
     async def add_pin_role(
@@ -39,10 +40,12 @@ class PinMessagePlugin(commands.Cog):
             await ctx.send("This command can only be used in a guild")
             return
         self._can_pin_roles.add(role)
+        # TODO: Save to DB
         await ctx.send(
             f"+ Added {role.name} to the list of roles that can pin messages"
         )
 
+    # TODO: Change to slash command
     @commands.command("remove_pin_role")
     @commands.has_permissions(manage_roles=True)
     async def remove_pin_role(
@@ -57,6 +60,7 @@ class PinMessagePlugin(commands.Cog):
         if role not in self._can_pin_roles:
             await ctx.send("That role cannot pin messages")
             return
+        # TODO: Save to DB
         self._can_pin_roles.remove(role)
         await ctx.send(
             f"- Removed {role.name} from the list of roles that can pin messages"
@@ -82,5 +86,3 @@ class PinMessagePlugin(commands.Cog):
             await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
         else:
             await ctx.message.add_reaction("\N{CROSS MARK}")
-
-
