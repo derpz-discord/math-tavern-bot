@@ -33,9 +33,9 @@ class ConfigPlugin(commands.Cog):
 
     @config.sub_command()
     async def unload_plugin(
-            self,
-            ctx: disnake.ApplicationCommandInteraction,
-            plugin: str = commands.Param(description="The plugin to unload"),
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        plugin: str = commands.Param(description="The plugin to unload"),
     ):
         if plugin in self.bot.cogs:
             self.bot.remove_cog(plugin)
@@ -43,7 +43,7 @@ class ConfigPlugin(commands.Cog):
         else:
             await ctx.send(f"Plugin {plugin} not loaded")
 
-    @commands.command(aliases=['sqlexec'])
+    @commands.command(aliases=["sqlexec"])
     @commands.is_owner()
     async def sql_exec(self, ctx: commands.Context):
         """
@@ -75,8 +75,10 @@ class ConfigPlugin(commands.Cog):
                 result = await conn.execute(text(query))
                 result = result.fetchall()
             except Exception as e:
-                await orig.edit(f"There was an error executing your query. "
-                                f"I have DMed you the error")
+                await orig.edit(
+                    f"There was an error executing your query. "
+                    f"I have DMed you the error"
+                )
                 await ctx.author.send(pprint.pformat(e))
                 raise e
             await orig.edit(f"Result: \n```\n{pprint.pp(result)}\n```")
@@ -107,8 +109,9 @@ class ConfigPlugin(commands.Cog):
         try:
             result = eval(code)
         except Exception as e:
-            await orig.edit(f"There was an error executing your code. "
-                            f"I have DMed you the error")
+            await orig.edit(
+                f"There was an error executing your code. " f"I have DMed you the error"
+            )
             await ctx.author.send(pprint.pformat(e))
 
             raise e
