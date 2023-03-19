@@ -1,11 +1,11 @@
 [package]
-name = "bookbot"
+name = "math-tavern-bot"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "bookbot"
+name = "math_tavern_bot"
 crate-type = ["cdylib"]
 
 [dependencies]

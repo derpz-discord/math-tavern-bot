@@ -1,0 +1,1 @@
+from math_tavern_bot.booklist.booklist import BookListPlugin

@@ -1,4 +1,5 @@
 import functools
+import logging
 from typing import Optional
 
 import disnake
@@ -7,6 +8,18 @@ from disnake.ext import commands
 
 
 class EditBookMetaModal(disnake.ui.Modal):
+    """
+    Modal that allows the user to input the metadata of a book
+    after they upload it.
+    Specifically, we are taking in the:
+    - title
+    - author
+    - isbn
+
+    It is intuitively obvious to even the most casual observer that
+    the ISBN is a hash for a book object and thus uniquely identifies
+    a book.
+    """
     def __init__(self, **kwargs):
         components = [
             disnake.ui.TextInput(
@@ -75,13 +88,14 @@ class UploadView(disnake.ui.View):
         await self.message.edit(view=None)
 
 
-class BookList(commands.Cog):
+class BookListPlugin(commands.Cog):
     """
     Cog for managing a book list channel.
     """
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.logger = logging.getLogger(__name__)
         self._documentation = {
             self.book_list_channel: disnake.Embed(
                 title="book_list_channel",
@@ -95,6 +109,8 @@ class BookList(commands.Cog):
         # TODO: Add a database to store the book list channel
         self._book_list_channel: Optional[disnake.TextChannel] = None
 
+        self.logger.info("BookList plugin loaded")
+
     @commands.slash_command(name="booklist")
     async def book_list(self, ctx: disnake.ApplicationCommandInteraction):
         pass
@@ -105,6 +121,7 @@ class BookList(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):
+        """Keeps the book list channel clean by deleting any non-bot messages"""
         if (
             self._book_list_channel
             and message.channel == self._book_list_channel
