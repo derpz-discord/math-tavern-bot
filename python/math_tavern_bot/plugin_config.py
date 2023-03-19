@@ -1,12 +1,11 @@
 import logging
 import pprint
-from sqlite3 import OperationalError
 
 import disnake
 from disnake.ext import commands
 from sqlalchemy import text
 
-from math_tavern_bot import KvStoredBot
+from math_tavern_bot.bot_classes import KvStoredBot
 
 
 class ConfigPlugin(commands.Cog):

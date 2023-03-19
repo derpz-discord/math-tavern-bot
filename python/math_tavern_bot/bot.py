@@ -4,10 +4,11 @@ from disnake.ext import commands
 from disnake.ext.commands import errors, Context
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from math_tavern_bot import KvStoredBot
+from math_tavern_bot.bot_classes import KvStoredBot
 from math_tavern_bot.book_search import BookSearchPlugin
 from math_tavern_bot.booklist import BookListPlugin
-from math_tavern_bot.config.plugin import ConfigPlugin
+from math_tavern_bot.plugin_config import ConfigPlugin
+from math_tavern_bot.plugin_autosully import AutoSullyPlugin
 from math_tavern_bot.plugin_pin import PinMessagePlugin
 from math_tavern_bot.tierlist import TierListPlugin
 
@@ -30,7 +31,7 @@ class BookBot(KvStoredBot):
 
         self.add_cog(BookListPlugin(self))
         self.add_cog(TierListPlugin(self))
-        # self.add_cog(AutoSullyPlugin(self))
+        self.add_cog(AutoSullyPlugin(self))
         self.add_cog(PinMessagePlugin(self))
         self.add_cog(ConfigPlugin(self))
         self.add_cog(BookSearchPlugin(self))
