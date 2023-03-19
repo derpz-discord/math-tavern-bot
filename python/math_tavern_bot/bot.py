@@ -7,6 +7,7 @@ from disnake.ext.commands import errors, Context
 
 from math_tavern_bot.booklist import BookListPlugin
 from math_tavern_bot.config.plugin import ConfigPlugin
+from math_tavern_bot.book_search import BookSearchPlugin
 from math_tavern_bot.plugin_pin import PinMessagePlugin
 from math_tavern_bot.tierlist import TierListPlugin
 
@@ -32,6 +33,7 @@ class BookBot(commands.Bot):
         # self.add_cog(AutoSullyPlugin(self))
         self.add_cog(PinMessagePlugin(self))
         self.add_cog(ConfigPlugin(self))
+        self.add_cog(BookSearchPlugin(self))
 
     def configure_logging(self):
         logging.basicConfig(level=logging.INFO)
