@@ -2,6 +2,8 @@
 name = "math-tavern-bot"
 version = "0.1.0"
 edition = "2021"
+license = "GNU-Affero-3.0-or-later"
+authors = ["derpz-discord <derpz@sotruespace.uk>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]

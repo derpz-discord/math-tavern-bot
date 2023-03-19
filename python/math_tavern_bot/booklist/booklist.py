@@ -20,6 +20,7 @@ class EditBookMetaModal(disnake.ui.Modal):
     the ISBN is a hash for a book object and thus uniquely identifies
     a book.
     """
+
     def __init__(self, **kwargs):
         components = [
             disnake.ui.TextInput(

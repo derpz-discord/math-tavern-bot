@@ -11,6 +11,7 @@ class Author(BaseModel):
     Represents an author of a book. Note that an author could have written
     multiple books.
     """
+
     name: str
 
 
@@ -22,6 +23,7 @@ class Series(BaseModel):
     """
     Represents a series of books. Note that a series could have multiple books.
     """
+
     name: str
     publisher: Publisher
 

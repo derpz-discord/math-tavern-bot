@@ -9,7 +9,7 @@ python-source = "python"
 name = "math-tavern-bot"
 version = "0.1.0"
 description = "A bot for managing a book club"
-authors = ["derpz-discord"]
+authors = ["derpz-discord <derpz@sotruespace.uk>"]
 
 [tool.poetry.dependencies]
 python = ">=3.8"

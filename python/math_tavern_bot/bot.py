@@ -2,10 +2,12 @@ import logging
 
 import disnake
 import sentry_sdk
+from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
 
 from math_tavern_bot.booklist import BookListPlugin
 from math_tavern_bot.tierlist import TierListPlugin
+from math_tavern_bot.utils import fmt_user
 
 
 class BookBot(commands.Bot):
