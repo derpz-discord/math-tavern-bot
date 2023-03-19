@@ -1,0 +1,1 @@
+poetry run black $(git ls-files '*.py')
