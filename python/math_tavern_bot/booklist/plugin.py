@@ -22,10 +22,10 @@ class BookListPlugin(commands.Cog):
             self.book_list_channel: disnake.Embed(
                 title="book_list_channel",
                 description="Sets the book list channel. This is the channel where "
-                "the bot will manage the book list."
-                "Note that the channel is fully managed by the bot "
-                "and any messages that are not from the bot will "
-                "be instantly vaporized.",
+                            "the bot will manage the book list."
+                            "Note that the channel is fully managed by the bot "
+                            "and any messages that are not from the bot will "
+                            "be instantly vaporized.",
             )
         }
         # TODO: Add a database to store the book list channel
@@ -46,9 +46,9 @@ class BookListPlugin(commands.Cog):
     async def on_message(self, message: disnake.Message):
         """Keeps the book list channel clean by deleting any non-bot messages"""
         if (
-            self._book_list_channel
-            and message.channel == self._book_list_channel
-            and message.author != self.bot.user
+                self._book_list_channel
+                and message.channel == self._book_list_channel
+                and message.author != self.bot.user
         ):
             replied = await message.reply("Your message is being vaporized...")
             await message.delete()
@@ -56,12 +56,12 @@ class BookListPlugin(commands.Cog):
 
     @config.sub_command(description="Sets the book list channel")
     async def book_list_channel(
-        self,
-        ctx: disnake.ApplicationCommandInteraction,
-        *,
-        channel: disnake.TextChannel = commands.Param(
-            description="The channel which will be managed by the book list bot"
-        ),
+            self,
+            ctx: disnake.ApplicationCommandInteraction,
+            *,
+            channel: disnake.TextChannel = commands.Param(
+                description="The channel which will be managed by the book list bot"
+            ),
     ):
         """
         Sets the book list channel
@@ -110,12 +110,33 @@ class BookListPlugin(commands.Cog):
         # TODO: Implement this
         await ctx.send("This feature has yet to be implemented")
 
+    @commands.command(name="upload_book_file")
+    @commands.is_owner()
+    async def file_upload(self, ctx: commands.Context):
+        """
+        Uploads a book file to the book list.
+        """
+        orig_msg = await ctx.send("Please upload your book file now")
+        message = await self.bot.wait_for(
+            "message",
+            check=lambda m: m.author == ctx.author and m.channel == ctx.channel,
+        )
+        if not message.attachments:
+            await orig_msg.edit("No file attached")
+            return
+        await orig_msg.edit("Processing...")
+        await ctx.send(
+            f"Configure your upload of {message.attachments[0].url}",
+            view=UploadView(),
+        )
+
     @book_list.sub_command(description="Uploads your book to the book list.")
     async def upload(
-        self,
-        ctx: disnake.ApplicationCommandInteraction,
-        *,
-        url: str = commands.Param(description="The EXACT DOWNLOAD url of your book"),
+            self,
+            ctx: disnake.ApplicationCommandInteraction,
+            *,
+            url: str = commands.Param(
+                description="The EXACT DOWNLOAD url of your book"),
     ):
         """
         Uploads your book to the book list.
