@@ -1,5 +1,7 @@
 import logging
 import pprint
+from datetime import timedelta, datetime
+from typing import Optional
 
 import disnake
 from disnake.ext import commands
@@ -90,6 +92,53 @@ class BotAdminPlugin(commands.Cog):
         """
         await ctx.send(message)
 
+    @commands.slash_command(name="sudo_timeout")
+    @commands.is_owner()
+    async def sudo_timeout(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        *,
+        user: disnake.Member = commands.Param(description="The user to timeout"),
+        duration: int = commands.Param(
+            description="The duration of the timeout in seconds"
+        ),
+        reason: Optional[str] = commands.Param(
+            description="The reason for the timeout", default="Sudo timeout"
+        ),
+    ):
+        """
+        Timeout a user
+        """
+        human_readable_time = timedelta(seconds=duration)
+        await ctx.send(
+            f"Timeout {user} for {human_readable_time} seconds", ephemeral=True
+        )
+
+        await user.timeout(duration=human_readable_time, reason=reason)
+
+    @commands.slash_command(name="sudo_remove_timeout")
+    @commands.is_owner()
+    async def sudo_remove_timeout(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        *,
+        user: disnake.Member = commands.Param(
+            description="The user to remove the timeout from"
+        ),
+    ):
+        """
+        Remove a timeout from a user
+        """
+        expires_at = user.current_timeout
+        if expires_at is None:
+            await ctx.send(f"{user} is not timed out", ephemeral=True)
+            return
+        how_much_longer = expires_at - datetime.utcnow()
+        await ctx.send(
+            f"Remove timeout from {user} (Remains: {how_much_longer})", ephemeral=True
+        )
+        await user.remove_timeout()
+
     @commands.command(name="eval")
     @commands.is_owner()
     async def eval_code(self, ctx: commands.Context):
@@ -114,7 +163,7 @@ class BotAdminPlugin(commands.Cog):
         code = msg.content[9:-3]
         orig = await ctx.send(f"Executing Python code")
         try:
-            result = eval(code)
+            result = exec(code)
         except Exception as e:
             await orig.edit(
                 f"There was an error executing your code. " f"I have DMed you the error"
