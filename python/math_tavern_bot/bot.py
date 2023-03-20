@@ -26,6 +26,7 @@ class BookBot(KvStoredBot):
             database=engine,
             command_prefix=".",
             intents=disnake.Intents.all(),
+            reload=True,
             test_guilds=[1072179290671685753, 1073267404110561353],
         )
 

@@ -5,3 +5,11 @@ services:
     image: minio/minio:latest
     container_name: minio
     restart: unless-stopped
+  bot_db:
+    image: postgres:latest
+    container_name: bot_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: user
+      POSTGRES_DB: db

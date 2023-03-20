@@ -5,7 +5,7 @@ from disnake.ext import commands
 
 from math_tavern_bot.bot_classes import KvStoredBot
 from math_tavern_bot.config.models import CogConfiguration
-from math_tavern_bot.utils import fmt_user
+from math_tavern_bot.utils import fmt_user, check_in_guild
 
 
 class PinConfig(CogConfiguration):
@@ -13,7 +13,7 @@ class PinConfig(CogConfiguration):
 
 
 class PinMessagePlugin(commands.Cog):
-    config: PinConfig
+    config: dict[disnake.Guild, PinConfig]
 
     def __init__(self, bot: KvStoredBot):
         self.bot = bot
@@ -24,9 +24,14 @@ class PinMessagePlugin(commands.Cog):
         # load config from DB
         config = await self.bot.cog_config_store.get_cog_config(self)
         if config:
-            self.config = PinConfig.parse_obj(config)
+            self.config = dict(
+                map(
+                    lambda x: (self.bot.get_guild(x[0]), PinConfig.parse_obj(x[1])),
+                    config.items(),
+                )
+            )
         else:
-            await self.bot.cog_config_store.set_cog_config(self, PinConfig())
+            self.logger.warning("No config found in DB")
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
         if isinstance(error, commands.CommandInvokeError):
@@ -41,18 +46,19 @@ class PinMessagePlugin(commands.Cog):
 
     @commands.slash_command()
     @commands.has_permissions(manage_roles=True)
+    @commands.check(check_in_guild)
     async def add_pin_role(
-            self,
-            ctx: disnake.ApplicationCommandInteraction,
-            *,
-            role: disnake.Role = commands.Param(
-                description="The role to give pin permissions to"),
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        *,
+        role: disnake.Role = commands.Param(
+            description="The role to give pin permissions to"
+        ),
     ):
-        if not ctx.guild:
-            await ctx.send("This command can only be used in a guild")
-            return
-        self.config.who_can_pin.add(role.id)
-        await self.bot.cog_config_store.set_cog_config(self, self.config)
+        guild_config = self.config.get(ctx.guild, PinConfig())
+        guild_config.who_can_pin.add(role.id)
+        self.config[ctx.guild] = guild_config
+        await self.bot.cog_config_store.set_cog_config(self, ctx.guild, guild_config)
         await ctx.send(
             f"+ Added {role.name} to the list of roles that can pin messages"
         )
@@ -60,58 +66,50 @@ class PinMessagePlugin(commands.Cog):
     # TODO: Change to slash command
     @commands.slash_command()
     @commands.has_permissions(manage_roles=True)
+    @commands.check(check_in_guild)
     async def remove_pin_role(
-            self,
-            ctx: disnake.ApplicationCommandInteraction,
-            *,
-            role: disnake.Role = commands.Param(
-                description="The role to remove pin permissions from"),
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        *,
+        role: disnake.Role = commands.Param(
+            description="The role to remove pin permissions from"
+        ),
     ):
-        if not ctx.guild:
-            await ctx.send("This command can only be used in a guild")
-            return
-        if role.id not in self.config.who_can_pin:
+        guild_config = self.config.get(ctx.guild, PinConfig())
+        if role.id not in guild_config.who_can_pin:
             await ctx.send("That role cannot pin messages")
             return
-        self.config.who_can_pin.remove(role.id)
-        await self.bot.cog_config_store.set_cog_config(self, self.config)
+        guild_config.who_can_pin.remove(role.id)
+        self.config[ctx.guild] = guild_config
+        await self.bot.cog_config_store.set_cog_config(self, ctx.guild, guild_config)
         await ctx.send(
             f"- Removed {role.name} from the list of roles that can pin messages"
         )
 
     @commands.command("pinroles")
+    @commands.check(check_in_guild)
     async def list_pin_roles(self, ctx: commands.Context):
-        if not ctx.guild:
-            await ctx.send("This command can only be used in a guild")
-            return
-        if not self.config.who_can_pin:
-            # try fetching from DB again
-
-            return
+        guild_config = self.config.get(ctx.guild, PinConfig())
         pin_roles = list(
             map(
                 lambda role_id: ctx.guild.get_role(role_id),
-                self.config.who_can_pin,
+                guild_config.who_can_pin,
             )
         )
         await ctx.send(
             embed=disnake.Embed(
                 title="Roles that can pin messages",
-                description="\n".join(
-                    f"- {role.name}"
-                    for role in pin_roles
-                ),
+                description="\n".join(f"- {role.name}" for role in pin_roles),
             )
         )
 
     @commands.command("pin")
+    @commands.check(check_in_guild)
     async def pin_message(self, ctx: commands.Context):
-        if not ctx.guild:
-            await ctx.send("This command can only be used in a guild")
-            return
+        guild_config = self.config.get(ctx.guild, PinConfig())
         if not (
-                any(role in ctx.author.roles for role in self.config.who_can_pin)
-                or ctx.author.guild_permissions.manage_messages
+            any(role in ctx.author.roles for role in guild_config.who_can_pin)
+            or ctx.author.guild_permissions.manage_messages
         ):
             await ctx.send("You do not have permission to pin messages")
             return
@@ -120,7 +118,7 @@ class PinMessagePlugin(commands.Cog):
             to_pin = ctx.message.reference.resolved
             await to_pin.pin(
                 reason=f"Pinned on behalf of {fmt_user(ctx.author)} (id: "
-                       f"{ctx.author.id})"
+                f"{ctx.author.id})"
             )
             # react to the message with a checkmark
             await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
@@ -128,13 +126,12 @@ class PinMessagePlugin(commands.Cog):
             await ctx.message.add_reaction("\N{CROSS MARK}")
 
     @commands.command("unpin")
+    @commands.check(check_in_guild)
     async def unpin_message(self, ctx: commands.Context):
-        if not ctx.guild:
-            await ctx.send("This command can only be used in a guild")
-            return
+        guild_config = self.config.get(ctx.guild, PinConfig())
         if not (
-                any(role in ctx.author.roles for role in self.config.who_can_pin)
-                or ctx.author.guild_permissions.manage_messages
+            any(role in ctx.author.roles for role in guild_config.who_can_pin)
+            or ctx.author.guild_permissions.manage_messages
         ):
             await ctx.send("You do not have permission to unpin messages")
             return
@@ -143,7 +140,7 @@ class PinMessagePlugin(commands.Cog):
             to_unpin = ctx.message.reference.resolved
             await to_unpin.unpin(
                 reason=f"Unpinned on behalf of {fmt_user(ctx.author)} (id: "
-                       f"{ctx.author.id})"
+                f"{ctx.author.id})"
             )
             # react to the message with a checkmark
             await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
