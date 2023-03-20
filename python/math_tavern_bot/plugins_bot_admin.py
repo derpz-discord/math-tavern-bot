@@ -5,10 +5,10 @@ import disnake
 from disnake.ext import commands
 from sqlalchemy import text
 
-from math_tavern_bot.bot_classes import KvStoredBot
+from math_tavern_bot.library.bot_classes import KvStoredBot
 
 
-class ConfigPlugin(commands.Cog):
+class BotAdminPlugin(commands.Cog):
     """
     Cog for managing the bot configuration
     (also allows for arbitrary SQL execution)
@@ -19,7 +19,7 @@ class ConfigPlugin(commands.Cog):
         self.logger = logging.getLogger(__name__)
 
     async def cog_load(self) -> None:
-        self.logger.info("Config plugin loaded")
+        self.logger.info("BotAdmin plugin loaded")
 
     @commands.command(name="plugins")
     @commands.is_owner()
@@ -81,6 +81,14 @@ class ConfigPlugin(commands.Cog):
                 await ctx.author.send(pprint.pformat(e))
                 raise e
             await orig.edit(f"Result: \n```\n{pprint.pp(result)}\n```")
+
+    @commands.command(name="sendraw")
+    @commands.is_owner()
+    async def send_raw_message(self, ctx: commands.Context, *, message: str):
+        """
+        Send a raw message
+        """
+        await ctx.send(message)
 
     @commands.command(name="eval")
     @commands.is_owner()

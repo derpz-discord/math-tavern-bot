@@ -4,10 +4,10 @@ from disnake.ext import commands
 from disnake.ext.commands import errors, Context
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from math_tavern_bot.bot_classes import KvStoredBot
 from math_tavern_bot.book_search import BookSearchPlugin
 from math_tavern_bot.booklist import BookListPlugin
-from math_tavern_bot.plugin_config import ConfigPlugin
+from math_tavern_bot.library.bot_classes import KvStoredBot
+from math_tavern_bot.plugins_bot_admin import BotAdminPlugin
 from math_tavern_bot.plugin_autosully import AutoSullyPlugin
 from math_tavern_bot.plugin_pin import PinMessagePlugin
 from math_tavern_bot.tierlist import TierListPlugin
@@ -30,19 +30,20 @@ class BookBot(KvStoredBot):
             test_guilds=[1072179290671685753, 1073267404110561353],
         )
 
-        self.add_cog(BookListPlugin(self))
-        self.add_cog(TierListPlugin(self))
-        self.add_cog(AutoSullyPlugin(self))
-        self.add_cog(PinMessagePlugin(self))
-        self.add_cog(ConfigPlugin(self))
-        self.add_cog(BookSearchPlugin(self))
-
     def setup_sentry(self, sentry_dsn: str, *, trace_sample_rate: float = 0.4):
         sentry_sdk.init(dsn=sentry_dsn, traces_sample_rate=trace_sample_rate)
         self.logger.info("Sentry configured")
 
     async def on_ready(self):
         self.logger.info(f"We have logged in as {self.user}")
+        self.logger.info(f"We are in {len(self.guilds)} servers")
+
+        self.add_cog(BookListPlugin(self))
+        self.add_cog(TierListPlugin(self))
+        self.add_cog(AutoSullyPlugin(self))
+        self.add_cog(PinMessagePlugin(self))
+        self.add_cog(BotAdminPlugin(self))
+        self.add_cog(BookSearchPlugin(self))
 
     async def on_command_error(
         self, context: Context, exception: errors.CommandError

@@ -10,7 +10,7 @@ import logging
 import disnake
 from disnake.ext import commands
 
-from math_tavern_bot.utils import fmt_user
+from math_tavern_bot.library.utils import fmt_user
 
 
 class TierListPlugin(commands.Cog):

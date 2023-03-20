@@ -1,12 +1,12 @@
-import logging
 from typing import Optional
 
 import disnake
 from disnake.ext import commands
 
-from math_tavern_bot.bot_classes import KvStoredBot
-from math_tavern_bot.config.models import CogConfiguration
-from math_tavern_bot.utils import fmt_user, check_in_guild
+from math_tavern_bot.database.models import CogConfiguration
+from math_tavern_bot.library.bot_classes import KvStoredBot
+from math_tavern_bot.library.cog import DatabaseConfiguredCog
+from math_tavern_bot.library.utils import check_in_guild, fmt_user
 
 
 class AutoSullyConfig(CogConfiguration):
@@ -14,7 +14,7 @@ class AutoSullyConfig(CogConfiguration):
     sully_users: set[int] = set()
 
 
-class AutoSullyPlugin(commands.Cog):
+class AutoSullyPlugin(DatabaseConfiguredCog):
     """
     Automatically sullies configured users
     """
@@ -22,30 +22,16 @@ class AutoSullyPlugin(commands.Cog):
     config: dict[disnake.Guild, AutoSullyConfig]
 
     def __init__(self, bot: KvStoredBot):
-        self.bot = bot
-        self.logger = logging.getLogger(__name__)
+        super().__init__(bot, AutoSullyConfig)
         self._sully_emoji: Optional[disnake.Emoji] = None
-        self.config: dict[disnake.Guild, AutoSullyConfig] = {}
-
-    async def cog_load(self) -> None:
-        self.logger.info("AutoSully plugin loaded")
-        # load config from DB
-        config = await self.bot.cog_config_store.get_cog_config(self)
-        if config:
-            self.config = dict(
-                map(
-                    lambda x: (self.bot.get_guild(x[0]), AutoSullyConfig.parse_obj(x[1])),
-                    config.items(),
-                )
-            )
-        else:
-            self.logger.warning("No config found in DB")
 
     @commands.slash_command()
     async def autosully(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
-    @autosully.sub_command()
+    @autosully.sub_command(
+        description="Sets the emoji which will be used to sully users"
+    )
     @commands.has_permissions(manage_emojis=True)
     @commands.check(check_in_guild)
     async def set_sully(
@@ -88,6 +74,30 @@ class AutoSullyPlugin(commands.Cog):
         self.config[ctx.guild] = guild_config
         await self.bot.cog_config_store.set_cog_config(self, ctx.guild, guild_config)
         await ctx.send(f"Removed {fmt_user(user)} from the sully list")
+
+    @commands.command("whoissully")
+    async def who_is_sully(self, ctx: commands.Context):
+        """
+        Lists all users who are currently being autosullied
+        :param ctx: The context of the command
+        :return: None
+        """
+        guild_config = self.config.get(ctx.guild, AutoSullyConfig())
+        if guild_config.sully_users:
+            sullied_users = []
+            # TODO: Cache
+            for user in guild_config.sully_users:
+                sullied_users.append(await ctx.guild.fetch_member(user))
+
+            await ctx.send(
+                embed=disnake.Embed(
+                    title="Sullied Users",
+                    description="\n".join(map(lambda u: u.mention, sullied_users)),
+                ),
+                allowed_mentions=disnake.AllowedMentions.none(),
+            )
+        else:
+            await ctx.send("No users are currently being autosullied")
 
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):

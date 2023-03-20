@@ -1,15 +1,14 @@
 version: "3.8"
 
 services:
-  minio:
-    image: minio/minio:latest
-    container_name: minio
-    restart: unless-stopped
   bot_db:
     image: postgres:latest
     container_name: bot_db
     restart: unless-stopped
     environment:
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: user
-      POSTGRES_DB: db
+      POSTGRES_PASSWORD: bookbot
+      POSTGRES_USER: bookbot
+      POSTGRES_DB: bookbot
+      POSTGRES_ROOT_PASSWORD: root
+    ports:
+        - "5432:5432"

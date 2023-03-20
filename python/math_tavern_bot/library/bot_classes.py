@@ -3,9 +3,8 @@ import logging
 from disnake.ext import commands
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from math_tavern_bot.config.storage import AsyncSqlAlchemyKvStore, CogConfigStore, \
-    AsyncPerServerSqlAlchemyKvStore
 from math_tavern_bot.database import SqlAlchemyBase
+from math_tavern_bot.database.storage import SqlAlchemyJsonStore, CogConfigStore
 
 
 class LoggedBot(commands.Bot):
@@ -41,7 +40,7 @@ class DatabasedBot(LoggedBot):
 class KvStoredBot(DatabasedBot):
     def __init__(self, *args, database: AsyncEngine, **options):
         super().__init__(*args, database=database, **options)
-        self.kv_store = AsyncPerServerSqlAlchemyKvStore(database)
+        self.kv_store = SqlAlchemyJsonStore(self.db)
         self.cog_config_store = CogConfigStore(
-            self.kv_store, self.guilds, logger=self.logger.getChild("cog_config_store")
+            self.kv_store, logger=self.logger.getChild("cog_config_store")
         )

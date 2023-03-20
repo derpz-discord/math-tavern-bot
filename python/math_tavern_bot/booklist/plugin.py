@@ -4,9 +4,9 @@ from typing import Optional
 import disnake
 from disnake.ext import commands
 
-from math_tavern_bot.bot_classes import DatabasedBot
 from math_tavern_bot.booklist.search import SearchView
 from math_tavern_bot.booklist.upload import UploadView
+from math_tavern_bot.library.bot_classes import DatabasedBot
 
 
 class BookListPlugin(commands.Cog):

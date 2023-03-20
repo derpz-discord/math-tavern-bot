@@ -3,35 +3,22 @@ import logging
 import disnake
 from disnake.ext import commands
 
-from math_tavern_bot.bot_classes import KvStoredBot
-from math_tavern_bot.config.models import CogConfiguration
-from math_tavern_bot.utils import fmt_user, check_in_guild
+from math_tavern_bot.library.bot_classes import KvStoredBot
+from math_tavern_bot.database.models import CogConfiguration
+from math_tavern_bot.library.utils import fmt_user, check_in_guild
+
+from math_tavern_bot.library.cog import DatabaseConfiguredCog
 
 
 class PinConfig(CogConfiguration):
     who_can_pin: set[int] = set()
 
 
-class PinMessagePlugin(commands.Cog):
+class PinMessagePlugin(DatabaseConfiguredCog):
     config: dict[disnake.Guild, PinConfig]
 
     def __init__(self, bot: KvStoredBot):
-        self.bot = bot
-        self.logger = logging.getLogger(__name__)
-
-    async def cog_load(self) -> None:
-        self.logger.info("PinMessage plugin loaded")
-        # load config from DB
-        config = await self.bot.cog_config_store.get_cog_config(self)
-        if config:
-            self.config = dict(
-                map(
-                    lambda x: (self.bot.get_guild(x[0]), PinConfig.parse_obj(x[1])),
-                    config.items(),
-                )
-            )
-        else:
-            self.logger.warning("No config found in DB")
+        super().__init__(bot, PinConfig)
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
         if isinstance(error, commands.CommandInvokeError):
@@ -44,7 +31,7 @@ class PinMessagePlugin(commands.Cog):
             await ctx.send("An error occurred")
             raise error
 
-    @commands.slash_command()
+    @commands.slash_command(description="Adds a role which can pin messages")
     @commands.has_permissions(manage_roles=True)
     @commands.check(check_in_guild)
     async def add_pin_role(
@@ -63,8 +50,9 @@ class PinMessagePlugin(commands.Cog):
             f"+ Added {role.name} to the list of roles that can pin messages"
         )
 
-    # TODO: Change to slash command
-    @commands.slash_command()
+    @commands.slash_command(
+        description="Removes role from list of roles which can pin messages"
+    )
     @commands.has_permissions(manage_roles=True)
     @commands.check(check_in_guild)
     async def remove_pin_role(
@@ -99,8 +87,9 @@ class PinMessagePlugin(commands.Cog):
         await ctx.send(
             embed=disnake.Embed(
                 title="Roles that can pin messages",
-                description="\n".join(f"- {role.name}" for role in pin_roles),
-            )
+                description="\n".join(f"- {role.mention}" for role in pin_roles),
+            ),
+            allowed_mentions=disnake.AllowedMentions.none(),
         )
 
     @commands.command("pin")
