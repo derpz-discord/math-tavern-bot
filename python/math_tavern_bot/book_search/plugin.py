@@ -58,4 +58,6 @@ class BookSearchPlugin(commands.Cog):
         books_found = await query_openlibrary(query)
         await ctx.send(f"Found {books_found.num_found} books")
         for doc in books_found.docs:
+            # TODO: Known bug, since the response is very large.
+            #  Need to truncate the response
             await ctx.send(f"```{pprint.pformat(doc)}```")

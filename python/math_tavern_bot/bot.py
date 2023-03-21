@@ -65,7 +65,8 @@ class BookBot(KvStoredBot):
         self.add_cog(AutoSullyPlugin(self))
         self.add_cog(PinMessagePlugin(self))
         self.add_cog(BotAdminPlugin(self))
-        self.add_cog(BookSearchPlugin(self))
+        # TODO: Fix this plugin
+        # self.add_cog(BookSearchPlugin(self))
 
         await self.change_presence(activity=disnake.Game(name="bot ready"))
 

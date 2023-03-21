@@ -8,6 +8,7 @@ import sqlalchemy
 import types_aiobotocore_s3
 from disnake import ModalInteraction
 from pydantic import BaseModel, Field, validator, ValidationError
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import Session
 
@@ -207,6 +208,29 @@ class EditBookMetaModal(disnake.ui.Modal):
         await interaction.response.send_message("Cancelled", ephemeral=True)
 
 
+async def search_book_in_db(
+    query: str, engine: AsyncEngine
+) -> Optional[list[BookInDb]]:
+    """
+    Searches for a book in the database
+    :param query: The query to search for
+    :param engine: The sqlalchemy engine
+    :return: The list of books that match the query
+    """
+
+    async with AsyncSession(engine) as session:
+        stmt = select(BookInDb).where(
+            BookInDb.title.ilike(f"%{query}%")
+            | BookInDb.author.ilike(f"%{query}%")
+            | BookInDb.subject.ilike(f"%{query}%")
+        )
+        result = await session.execute(stmt)
+        things = result.scalars().all()
+        if len(things) == 0:
+            return None
+        return things
+
+
 # TODO: Stream download instead of reading into memory
 async def download_book_from_db(
     s3_key: str, boto3_sess: aioboto3.Session
@@ -217,6 +241,7 @@ async def download_book_from_db(
     :param boto3_sess: The boto3 session
     :return: The bytes of the book
     """
+    # TODO: This should be offloaded to the rust portion of the bot
     # TODO: Better logging
     logger = logging.getLogger("booklist.download.download_book_from_db")
     # TODO: Hardcoded

@@ -9,7 +9,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from math_tavern_bot.booklist.search import SearchView
-from math_tavern_bot.booklist.upload import UploadView, BookInDb, download_book_from_db
+from math_tavern_bot.booklist.upload import (
+    UploadView,
+    BookInDb,
+    download_book_from_db,
+    search_book_in_db,
+)
 
 if TYPE_CHECKING:
     from math_tavern_bot.bot import BookBot
@@ -142,17 +147,21 @@ class BookListPlugin(DatabaseConfiguredCog):
         """
         Search for a book in the book list.
         """
-        # TODO: Implement this
+
         await ctx.send(f"Searching for {query}...")
-        view = SearchView(
-            [
-                disnake.SelectOption(
-                    label=f"Book {query}", value=query, description=f"Search {query}"
-                )
-            ]
-        )
-        view.message = await ctx.original_response()
-        await view.message.edit(f"Search results for {query}", view=view)
+        books = await search_book_in_db(query, self.bot.db)
+        if not books:
+            await ctx.send("No books found")
+            return
+        await ctx.edit_original_response(content=f"Found {len(books)} books")
+        for book in books:
+            # TODO: Extract to function
+            embed = disnake.Embed(title=book.title)
+            embed.add_field(name="Author", value=book.author, inline=False)
+            embed.add_field(name="ISBN", value=book.isbn, inline=False)
+            embed.add_field(name="Subject", value=book.subject, inline=False)
+            embed.add_field(name="S3 Key", value=book.s3_key, inline=False)
+            await ctx.send(embed=embed)
 
     @book_list.sub_command(
         description="Get a link to upload your book to the books list."
