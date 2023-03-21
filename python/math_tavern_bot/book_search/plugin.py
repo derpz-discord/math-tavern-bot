@@ -22,6 +22,18 @@ async def query_openlibrary(query: str) -> OpenLibraryResponse:
             return parsed
 
 
+async def query_openlibrary_for_isbn(isbn: str) -> OpenLibraryResponse:
+    sess = aiohttp.ClientSession()
+    async with sess as session:
+        async with session.get(
+            f"http://openlibrary.org/search.json?q=isbn:{isbn}"
+        ) as resp:
+            resp.raise_for_status()
+            content = await resp.json()
+            parsed = OpenLibraryResponse.parse_obj(content)
+            return parsed
+
+
 class BookSearchPlugin(commands.Cog):
     """
     Cog that provides an API which allows you to search for books

@@ -1,5 +1,7 @@
+import aioboto3
 import disnake
 import sentry_sdk
+import types_aiobotocore_s3
 from disnake.ext import commands
 from disnake.ext.commands import errors, Context
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -29,6 +31,10 @@ class BookBot(KvStoredBot):
             reload=True,
             test_guilds=[1072179290671685753, 1073267404110561353],
         )
+        # TODO: Make this configurable
+        self.s3 = aioboto3.Session(
+            aws_access_key_id="minioadmin", aws_secret_access_key="minioadmin"
+        )
 
     def setup_sentry(self, sentry_dsn: str, *, trace_sample_rate: float = 0.4):
         sentry_sdk.init(dsn=sentry_dsn, traces_sample_rate=trace_sample_rate)
@@ -38,6 +44,22 @@ class BookBot(KvStoredBot):
         self.logger.info(f"We have logged in as {self.user}")
         self.logger.info(f"We are in {len(self.guilds)} servers")
 
+        # TODO: Hardcoded
+        try:
+            # TODO: Hardcoded
+            async with self.s3.resource(
+                "s3", endpoint_url="http://localhost:9090"
+            ) as s3:
+                s3: types_aiobotocore_s3.S3ServiceResource
+                bucket = await s3.Bucket("bookbot")
+                resp = bucket.get_available_subresources()
+                self.logger.info("S3 connection successful. Response: %s", resp)
+        except Exception as e:
+            self.logger.error("S3 connection failed: %s", e)
+            self.logger.exception(e)
+            await self.close()
+
+        # TODO: Better system of doing this
         self.add_cog(BookListPlugin(self))
         self.add_cog(TierListPlugin(self))
         self.add_cog(AutoSullyPlugin(self))

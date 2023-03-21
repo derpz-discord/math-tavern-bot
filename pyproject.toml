@@ -24,6 +24,8 @@ aiohttp = {extras = ["speedups"], version = "^3.8.4"}
 aiodns = "^3.0.0"
 aiosqlite = "^0.18.0"
 psycopg = {extras = ["binary", "pool"], version = "^3.1.8"}
+aioboto3 = "^11.0.1"
+types-aioboto3 = {extras = ["s3"], version = "^11.0.1.post1"}
 
 [tool.poetry.dev-dependencies]
 maturin = "^0.14.13"
