@@ -32,7 +32,7 @@ class BookBot(KvStoredBot):
             test_guilds=[1072179290671685753, 1073267404110561353],
         )
         # TODO: Make this configurable
-        self.s3 = aioboto3.Session(
+        self.boto3_sess = aioboto3.Session(
             aws_access_key_id="minioadmin", aws_secret_access_key="minioadmin"
         )
 
@@ -47,7 +47,7 @@ class BookBot(KvStoredBot):
         # TODO: Hardcoded
         try:
             # TODO: Hardcoded
-            async with self.s3.resource(
+            async with self.boto3_sess.resource(
                 "s3", endpoint_url="http://localhost:9090"
             ) as s3:
                 s3: types_aiobotocore_s3.S3ServiceResource

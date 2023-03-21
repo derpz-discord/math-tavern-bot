@@ -207,6 +207,35 @@ class EditBookMetaModal(disnake.ui.Modal):
         await interaction.response.send_message("Cancelled", ephemeral=True)
 
 
+# TODO: Stream download instead of reading into memory
+async def download_book_from_db(
+    s3_key: str, boto3_sess: aioboto3.Session
+) -> Optional[bytes]:
+    """
+    Downloads a book from the database
+    :param s3_key: The key of the book in the database
+    :param boto3_sess: The boto3 session
+    :return: The bytes of the book
+    """
+    # TODO: Better logging
+    logger = logging.getLogger("booklist.download.download_book_from_db")
+    # TODO: Hardcoded
+    async with boto3_sess.resource("s3", endpoint_url="http://localhost:9000") as s3:
+        bucket = await s3.Bucket("bookbot")
+        logger.info("Got bucket")
+        try:
+            obj = await bucket.Object(s3_key)
+            obj = await obj.get()
+            book_body = await obj["Body"].read()
+            logger.info("Got object")
+            return book_body
+        except Exception as e:
+            # TODO: We should probably handle this better
+            logger.warning("Failed to download file")
+            logger.exception(e)
+            return None
+
+
 async def upload_book_and_insert_to_db(
     meta: BookMetadata, engine: AsyncEngine, boto3_sess: aioboto3.Session
 ):
@@ -272,7 +301,9 @@ class ConfirmBookMetaView(disnake.ui.View):
         self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
         await interaction.response.send_message("Uploading now... please wait")
-        await upload_book_and_insert_to_db(self.book_meta, self.bot.db, self.bot.s3)
+        await upload_book_and_insert_to_db(
+            self.book_meta, self.bot.db, self.bot.boto3_sess
+        )
         await interaction.followup.send("Uploaded successfully", ephemeral=True)
 
     @disnake.ui.button(label="Correct Mistakes", style=disnake.ButtonStyle.red)

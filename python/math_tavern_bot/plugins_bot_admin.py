@@ -82,7 +82,7 @@ class BotAdminPlugin(commands.Cog):
                 )
                 await ctx.author.send(pprint.pformat(e))
                 raise e
-            await orig.edit(f"Result: \n```\n{pprint.pp(result)}\n```")
+            await orig.edit(f"Result: \n```\n{pprint.pformat(result)}\n```")
 
     @commands.command(name="sendraw")
     @commands.is_owner()

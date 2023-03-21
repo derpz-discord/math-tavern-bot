@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta
+from io import BytesIO
 from typing import Optional, TYPE_CHECKING
 
 import disnake
 import sqlalchemy
 from disnake.ext import commands
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from math_tavern_bot.booklist.search import SearchView
-from math_tavern_bot.booklist.upload import UploadView, BookInDb
+from math_tavern_bot.booklist.upload import UploadView, BookInDb, download_book_from_db
 
 if TYPE_CHECKING:
     from math_tavern_bot.bot import BookBot
@@ -215,3 +217,42 @@ class BookListPlugin(DatabaseConfiguredCog):
         await ctx.send("Processing...")
         view = UploadView(url, await ctx.original_response(), self.bot)
         await view.message.edit(f"Configure your upload of {url}", view=view)
+
+    @book_list.sub_command(description="Download the book from the database")
+    async def download_book(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        *,
+        isbn: str = commands.Param(description="The ISBN of the book to download"),
+    ):
+        """
+        Download the book from the database
+        """
+        # TODO: This will fail if the book is larger than 8MB (Discord's limit)
+        async with AsyncSession(self.bot.db) as sess:
+            stmt = select(BookInDb).where(BookInDb.isbn == isbn)
+            result = await sess.scalars(stmt)
+            books = result.fetchall()
+            if not books:
+                await ctx.send("No book found with that ISBN")
+                return
+            if len(books) > 1:
+                # TODO: This should not happen
+                await ctx.send("More than one book found with that ISBN")
+                return
+            book: BookInDb = books[0]
+            await ctx.send(f"Downloading {book.title}...")
+            book_file = await download_book_from_db(book.s3_key, self.bot.boto3_sess)
+            if book_file is None:
+                await ctx.send("Failed to download book")
+                return
+            bio = BytesIO()
+            bio.write(book_file)
+            bio.seek(0)
+
+            # TODO: Filename should be sanitized. Actually, we should do that
+            #  before uploading the book
+            await ctx.send(
+                f"Your file {book.title} by {book.author} is ready",
+                file=disnake.File(bio, filename=book.title + ".pdf"),
+            )
