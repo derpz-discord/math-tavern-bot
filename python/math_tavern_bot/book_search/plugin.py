@@ -1,4 +1,5 @@
 import logging
+import pprint
 
 import aiohttp
 import disnake
@@ -8,9 +9,8 @@ from math_tavern_bot.book_search.models import OpenLibraryResponse
 
 
 # TODO: Finish
-async def query_openlibrary(
-    sess: aiohttp.ClientSession, query: str
-) -> OpenLibraryResponse:
+async def query_openlibrary(query: str) -> OpenLibraryResponse:
+    sess = aiohttp.ClientSession()
     async with sess as session:
         async with session.get(
             "http://openlibrary.org/search.json",
@@ -31,8 +31,6 @@ class BookSearchPlugin(commands.Cog):
         self.bot = bot
         self.logger = logging.getLogger(__name__)
 
-        self._aiohttp_sess = aiohttp.ClientSession()
-
     async def cog_load(self) -> None:
         self.logger.info("BookSearch plugin loaded")
 
@@ -45,5 +43,7 @@ class BookSearchPlugin(commands.Cog):
         *,
         query: str = commands.Param(description="Your query"),
     ):
-        books_found = await query_openlibrary(self._aiohttp_sess, query)
+        books_found = await query_openlibrary(query)
         await ctx.send(f"Found {books_found.num_found} books")
+        for doc in books_found.docs:
+            await ctx.send(f"```{pprint.pformat(doc)}```")

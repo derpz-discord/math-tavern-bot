@@ -32,4 +32,5 @@ class Book(BaseModel):
     title: str
     author: Author
     isbn: str
+    edition: int
     series: Optional[Series]

@@ -76,7 +76,7 @@ class OpenLibraryResponse(BaseModel):
     numFound: int
     start: int
     numFoundExact: bool
-    docs: List[Doc]
+    docs: List[dict]
     num_found: int
     q: str
     offset: Any

@@ -45,6 +45,8 @@ class BookBot(KvStoredBot):
         self.add_cog(BotAdminPlugin(self))
         self.add_cog(BookSearchPlugin(self))
 
+        await self.change_presence(activity=disnake.Game(name="bot ready"))
+
     async def on_command_error(
         self, context: Context, exception: errors.CommandError
     ) -> None:
