@@ -1,9 +1,11 @@
 import aioboto3
 import disnake
+import sqlalchemy
 import types_aiobotocore_s3
 from derpz_botlib.bot_classes import ConfigurableCogsBot
+from derpz_botlib.database.db import SqlAlchemyBase
 from disnake.ext import commands
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 
 # TODO:
@@ -47,9 +49,30 @@ class BookBot(ConfigurableCogsBot):
         self.load_cogs()
         await self.change_presence(activity=disnake.Game(name="bot ready"))
 
+    async def _init_db(self):
+        """Creates all the database tables"""
+        from math_tavern_bot.plugins.booklist.models import BookInDb
+
+        self.engine_logger.info("Initializing database")
+        async with self.engine.begin() as conn:
+            self.engine.echo = True
+            await conn.run_sync(SqlAlchemyBase.metadata.create_all)
+            self.engine.echo = False
+        self.engine_logger.info("Database initialized")
+        # TODO: Do not inline SQL to do this query
+        async with AsyncSession(self.engine) as sess:
+            tables = await sess.execute(
+                sqlalchemy.text(
+                    "SELECT tablename, schemaname FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema';"
+                )
+            )
+
+            self.engine_logger.info("Tables: %s", tables.fetchall())
+
     def load_cogs(self):
         self.logger.info("[bold yellow]Loading cogs[/bold yellow]")
         self.load_extension("math_tavern_bot.plugins.plugin_bot_admin")
         self.load_extension("math_tavern_bot.plugins.plugin_pin")
         self.load_extension("math_tavern_bot.plugins.plugin_tierlist")
+        self.load_extension("math_tavern_bot.plugins.booklist.plugin")
         self.load_extension("math_tavern_bot.plugins.plugin_autosully")

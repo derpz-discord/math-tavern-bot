@@ -1,20 +1,19 @@
 from datetime import datetime, timedelta
 from io import BytesIO
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 import disnake
 import sqlalchemy
 from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
 from derpz_botlib.utils import check_in_guild
 from disnake.ext import commands
-from math_tavern_bot.plugins.booklist.upload import (BookInDb, UploadView,
+from math_tavern_bot.bot import BookBot
+from math_tavern_bot.plugins.booklist.models import BookInDb
+from math_tavern_bot.plugins.booklist.upload import (UploadView,
                                                      download_book_from_db,
                                                      search_book_in_db)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-if TYPE_CHECKING:
-    from math_tavern_bot.bot import BookBot
 
 
 class BookListPluginConfig(CogConfiguration):
@@ -26,24 +25,10 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
     Cog for managing a book list channel.
     """
 
-    bot: "BookBot"
+    bot: BookBot
 
-    def __init__(self, bot: "BookBot"):
+    def __init__(self, bot: BookBot):
         super().__init__(bot, BookListPluginConfig)
-        # TODO: Surely there's a better way to do this
-        self._documentation = {
-            self.book_list_channel: disnake.Embed(
-                title="book_list_channel",
-                description="Sets the book list channel. This is the channel where "
-                "the bot will manage the book list."
-                "Note that the channel is fully managed by the bot "
-                "and any messages that are not from the bot will "
-                "be instantly vaporized.",
-            )
-        }
-
-    async def cog_load(self):
-        self.logger.info("BookList plugin loaded")
 
     @commands.slash_command(name="book_list")
     async def cmd_book_list(self, ctx: disnake.ApplicationCommandInteraction):
@@ -87,15 +72,18 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
     async def config(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
+    @cmd_book_list.sub_command_group()
+    async def maintenance(self, ctx: disnake.ApplicationCommandInteraction):
+        pass
+
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):
         """Keeps the book list channel clean by deleting any non-bot messages"""
-        book_list_channel = self.config.get(
-            message.guild, BookListPluginConfig()
-        ).book_list_channel
+        guild_config = self.get_guild_config(message.guild)
+        book_list_channel = guild_config.book_list_channel
         if (
             book_list_channel
-            and message.channel == book_list_channel
+            and message.channel.id == book_list_channel
             and message.author != self.bot.user
         ):
             replied = await message.reply("Your message is being vaporized...")
@@ -113,32 +101,119 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
         ),
     ):
         """
-        Sets the book list channel
+        Sets the book list channel. Note that the book list channel will be
+        managed by the bot. All messages that are not posted by the bot
+        will be deleted. After running this, you need to run the
+        `sync_books_list` command to re-sync the book list channel.
 
-        :param ctx: :class:`disnake.ApplicationCommandInteraction` context
-        :param channel: The channel which will be managed by the book list bot
-        :return:
+        Parameters
+        ----------
+        channel: :class:`disnake.TextChannel`
+            The channel which will be managed by the book list bot
         """
-        guild_config = self.config.get(ctx.guild, BookListPluginConfig())
+        guild_config = self.get_guild_config(ctx.guild)
         guild_config.book_list_channel = channel.id
-        self.config[ctx.guild] = guild_config
-        await self.bot.cog_config_store.set_cog_config(self, ctx.guild, guild_config)
-        await ctx.send(f"Setting the book list channel to {channel.mention}")
-
-    @config.sub_command()
-    async def documentation(self, ctx: disnake.ApplicationCommandInteraction):
-        """
-        Documentation for config options
-        """
+        await self.save_guild_config(ctx.guild, guild_config)
         await ctx.send(
-            "Documentation for config options",
-            embeds=list(self._documentation.values()),
+            f"Setting the book list channel to {channel.mention}. "
+            f"Please sync the book list channel now."
         )
 
-    @cmd_book_list.sub_command(description="Search for a book in the book list.")
+    @maintenance.sub_command(description="Re syncs the book list channel")
+    @commands.check(check_in_guild)
+    @commands.has_permissions(manage_messages=True, manage_channels=True)
+    async def sync_books_list(self, ctx: disnake.ApplicationCommandInteraction):
+        """
+        Forces the bot to re-sync the books list. This will delete all the
+        messages in the book list channel and re-post all the books in the
+        database. Useful if someone accidentally deletes a message in the
+        book list channel.
+        """
+        guild_config = self.get_guild_config(ctx.guild)
+        if not guild_config.book_list_channel:
+            await ctx.send("Book list channel is not set")
+            return
+        channel = ctx.guild.get_channel(guild_config.book_list_channel)
+        if not channel:
+            await ctx.send("Book list channel is not found")
+            return
+        await ctx.send(
+            "Are you sure you want to sync the book list channel? "
+            "This will delete all the messages in the book list channel."
+        )
+        confirm = await ctx.original_response()
+        await confirm.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        await confirm.add_reaction("\N{CROSS MARK}")
+
+        is_confirmed = await self.bot.wait_for(
+            "reaction_add",
+            check=lambda r, u: u == ctx.author
+            and r.message.id == confirm.id
+            and str(r.emoji) in ("\N{WHITE HEAVY CHECK MARK}", "\N{CROSS MARK}"),
+        )
+
+        if str(is_confirmed[0].emoji) == "\N{CROSS MARK}":
+            await ctx.send("Aborting")
+            return
+        msg = await ctx.original_response()
+        await msg.clear_reactions()
+        await ctx.edit_original_response(content="Syncing the book list channel...")
+        await self._setup_book_list_channel(channel)
+        await ctx.edit_original_response(content="Done syncing the book list channel")
+
+    @maintenance.sub_command(
+        description="Cleans up non bot messages in the book list channel"
+    )
+    @commands.check(check_in_guild)
+    @commands.has_permissions(manage_messages=True, manage_channels=True)
+    async def cleanup_book_list_channel(
+        self, ctx: disnake.ApplicationCommandInteraction
+    ):
+        guild_config = self.get_guild_config(ctx.guild)
+        if not guild_config.book_list_channel:
+            await ctx.send("Book list channel is not set", ephemeral=True)
+            return
+        channel = ctx.guild.get_channel(guild_config.book_list_channel)
+        if not channel:
+            await ctx.send("Book list channel is not found", ephemeral=True)
+            return
+        await ctx.send(
+            "Are you sure you want to clean up the book list channel? "
+            "This will delete all the messages in the book list channel that are not "
+            "posted by the bot."
+        )
+        # TODO: Extract this confirmation logic into a separate function
+        confirm = await ctx.original_response()
+        await confirm.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        await confirm.add_reaction("\N{CROSS MARK}")
+
+        is_confirmed = await self.bot.wait_for(
+            "reaction_add",
+            check=lambda r, u: u == ctx.author
+            and r.message.id == confirm.id
+            and str(r.emoji) in ("\N{WHITE HEAVY CHECK MARK}", "\N{CROSS MARK}"),
+        )
+
+        if str(is_confirmed[0].emoji) == "\N{CROSS MARK}":
+            await ctx.send("Aborting")
+            return
+        msg = await ctx.original_response()
+        await msg.clear_reactions()
+        await ctx.edit_original_response(content="Cleaning up the book list channel...")
+        await self._cleanup_book_list_channel(channel)
+        await ctx.edit_original_response(
+            content="Done cleaning up the book list channel"
+        )
+
+    @cmd_book_list.sub_command()
     async def search(self, ctx: disnake.ApplicationCommandInteraction, *, query: str):
         """
         Search for a book in the book list.
+
+        Parameters
+        ----------
+        query: str
+            The query to search for.
         """
 
         await ctx.send(f"Searching for {query}...")
@@ -146,6 +221,7 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
         if not books:
             await ctx.send("No books found")
             return
+
         await ctx.edit_original_response(content=f"Found {len(books)} books")
         for book in books:
             # TODO: Extract to function
@@ -155,10 +231,11 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
             embed.add_field(name="Subject", value=book.subject, inline=False)
             embed.add_field(name="S3 Key", value=book.s3_key, inline=False)
             await ctx.send(embed=embed)
+        await ctx.send(
+            view=PageAwarePaginationView(await ctx.original_response(), last_page=10)
+        )
 
-    @cmd_book_list.sub_command(
-        description="Get a link to upload your book to the books list."
-    )
+    @cmd_book_list.sub_command()
     async def get_upload_link(self, ctx: disnake.ApplicationCommandInteraction):
         """
         Get a link to upload your book to the books list.
@@ -258,3 +335,37 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
                 f"Your file {book.title} by {book.author} is ready",
                 file=disnake.File(bio, filename=book.title + ".pdf"),
             )
+
+    async def _setup_book_list_channel(self, channel: disnake.TextChannel):
+        """
+        Sets up the book list channel
+        """
+        self.logger.info(
+            "Setting up book list channel %s in server %s", channel, channel.guild
+        )
+        await channel.purge()
+        info_msg = await channel.send("**Books List Channel**")
+        await info_msg.pin(reason="Info message for books list channel")
+        self.logger.info("Book list channel setup complete")
+
+    async def _cleanup_book_list_channel(self, channel: disnake.TextChannel):
+        """
+        Cleans up the book list channel
+        """
+        self.logger.info(
+            "Cleaning up book list channel %s in server %s", channel, channel.guild
+        )
+        # get all messages not sent by the bot, and before 14 days of age
+        messages = await channel.history(limit=100).flatten()
+        messages = list(filter(lambda m: m.author != self.bot.user, messages))
+        if len(messages) == 100:
+            # The channel is too messed up, recommend a resync
+            # TODO: Raise
+            return
+
+        await channel.delete_messages(messages)
+        self.logger.info("Book list channel cleanup complete")
+
+
+def setup(bot: BookBot):
+    bot.add_cog(BookListPlugin(bot))
