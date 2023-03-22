@@ -6,7 +6,9 @@ import rich
 from derpz_botlib.database.db import SqlAlchemyBase
 from derpz_botlib.database.storage import (AsyncSqlAlchemyKvJsonStore,
                                            CogConfigStore)
+from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
+from disnake.ext.commands import errors
 from rich.logging import RichHandler
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -54,6 +56,17 @@ class LoggedBot(commands.Bot):
     async def on_command_error(
         self, context: commands.Context, exception: commands.errors.CommandError
     ) -> None:
+        if self.extra_events.get("on_command_error", None):
+            return
+
+        command = context.command
+        if command and command.has_error_handler():
+            return
+
+        cog = context.cog
+        if cog and cog.has_error_handler():
+            return
+
         if isinstance(exception, commands.errors.CommandNotFound):
             return
         if isinstance(
@@ -83,7 +96,28 @@ class LoggedBot(commands.Bot):
                 "Bot is missing permissions to run command: %s", context.message.content
             )
 
-        self.logger.exception(exception)
+        self.logger.exception(exception, exc_info=exception)
+
+    async def on_slash_command_error(
+        self,
+        interaction: ApplicationCommandInteraction,
+        exception: commands.errors.CommandError,
+    ) -> None:
+        if self.extra_events.get("on_slash_command_error", None):
+            return
+
+        command = interaction.application_command
+        if command and command.has_error_handler():
+            return
+
+        cog = command.cog
+        if cog and cog.has_slash_error_handler():
+            return
+        await interaction.send(
+            "\N{CROSS MARK} An error occurred while running this command",
+            ephemeral=True,
+        )
+        self.logger.exception(exception, exc_info=exception)
 
 
 class DatabasedBot(LoggedBot):

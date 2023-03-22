@@ -7,11 +7,11 @@ import disnake
 import sqlalchemy
 from derpz_botlib.database.db import SqlAlchemyBase
 from disnake import ModalInteraction
+from math_tavern_bot.plugins.plugin_book_search import \
+    query_openlibrary_for_isbn
 from pydantic import BaseModel, Field, ValidationError, validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
-
-from math_tavern_bot.plugins.plugin_book_search import query_openlibrary_for_isbn
 
 if TYPE_CHECKING:
     from math_tavern_bot.bot import BookBot
