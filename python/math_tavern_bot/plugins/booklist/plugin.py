@@ -1,38 +1,31 @@
 from datetime import datetime, timedelta
 from io import BytesIO
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import disnake
 import sqlalchemy
+from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
+from derpz_botlib.utils import check_in_guild
 from disnake.ext import commands
+from math_tavern_bot.plugins.booklist.upload import (BookInDb, UploadView,
+                                                     download_book_from_db,
+                                                     search_book_in_db)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from math_tavern_bot.booklist.search import SearchView
-from math_tavern_bot.booklist.upload import (
-    UploadView,
-    BookInDb,
-    download_book_from_db,
-    search_book_in_db,
-)
-
 if TYPE_CHECKING:
     from math_tavern_bot.bot import BookBot
-from math_tavern_bot.database.models import CogConfiguration
-from math_tavern_bot.library.cog import DatabaseConfiguredCog
-from math_tavern_bot.library.utils import check_in_guild
 
 
 class BookListPluginConfig(CogConfiguration):
     book_list_channel: Optional[int] = None
 
 
-class BookListPlugin(DatabaseConfiguredCog):
+class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
     """
     Cog for managing a book list channel.
     """
 
-    config: dict[disnake.Guild, BookListPluginConfig]
     bot: "BookBot"
 
     def __init__(self, bot: "BookBot"):
@@ -52,11 +45,11 @@ class BookListPlugin(DatabaseConfiguredCog):
     async def cog_load(self):
         self.logger.info("BookList plugin loaded")
 
-    @commands.slash_command()
-    async def book_list(self, ctx: disnake.ApplicationCommandInteraction):
+    @commands.slash_command(name="book_list")
+    async def cmd_book_list(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
-    @book_list.sub_command(
+    @cmd_book_list.sub_command(
         name="list", description="Prints out the list of books in the DB"
     )
     async def list_books(self, ctx: disnake.ApplicationCommandInteraction):
@@ -71,7 +64,7 @@ class BookListPlugin(DatabaseConfiguredCog):
         guild_config = self.config.get(ctx.guild, BookListPluginConfig())
         # TODO: Not guild specific
 
-        async with AsyncSession(self.bot.db) as sess:
+        async with AsyncSession(self.bot.engine) as sess:
             stmt = sqlalchemy.select(BookInDb).order_by(BookInDb.title)
 
             # TODO: Do not loop, do pagination instead
@@ -90,7 +83,7 @@ class BookListPlugin(DatabaseConfiguredCog):
                 embed.add_field(name="S3 Key", value=book.s3_key, inline=False)
                 await ctx.send(embed=embed)
 
-    @book_list.sub_command_group()
+    @cmd_book_list.sub_command_group()
     async def config(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
@@ -142,14 +135,14 @@ class BookListPlugin(DatabaseConfiguredCog):
             embeds=list(self._documentation.values()),
         )
 
-    @book_list.sub_command(description="Search for a book in the book list.")
+    @cmd_book_list.sub_command(description="Search for a book in the book list.")
     async def search(self, ctx: disnake.ApplicationCommandInteraction, *, query: str):
         """
         Search for a book in the book list.
         """
 
         await ctx.send(f"Searching for {query}...")
-        books = await search_book_in_db(query, self.bot.db)
+        books = await search_book_in_db(query, self.bot.engine)
         if not books:
             await ctx.send("No books found")
             return
@@ -163,7 +156,7 @@ class BookListPlugin(DatabaseConfiguredCog):
             embed.add_field(name="S3 Key", value=book.s3_key, inline=False)
             await ctx.send(embed=embed)
 
-    @book_list.sub_command(
+    @cmd_book_list.sub_command(
         description="Get a link to upload your book to the books list."
     )
     async def get_upload_link(self, ctx: disnake.ApplicationCommandInteraction):
@@ -212,7 +205,7 @@ class BookListPlugin(DatabaseConfiguredCog):
             view=UploadView(message.attachments[0].url, msg, self.bot),
         )
 
-    @book_list.sub_command(description="Uploads your book to the book list.")
+    @cmd_book_list.sub_command(description="Uploads your book to the book list.")
     async def upload(
         self,
         ctx: disnake.ApplicationCommandInteraction,
@@ -227,7 +220,7 @@ class BookListPlugin(DatabaseConfiguredCog):
         view = UploadView(url, await ctx.original_response(), self.bot)
         await view.message.edit(f"Configure your upload of {url}", view=view)
 
-    @book_list.sub_command(description="Download the book from the database")
+    @cmd_book_list.sub_command(description="Download the book from the database")
     async def download_book(
         self,
         ctx: disnake.ApplicationCommandInteraction,
@@ -238,7 +231,7 @@ class BookListPlugin(DatabaseConfiguredCog):
         Download the book from the database
         """
         # TODO: This will fail if the book is larger than 8MB (Discord's limit)
-        async with AsyncSession(self.bot.db) as sess:
+        async with AsyncSession(self.bot.engine) as sess:
             stmt = select(BookInDb).where(BookInDb.isbn == isbn)
             result = await sess.scalars(stmt)
             books = result.fetchall()

@@ -3,24 +3,23 @@ import logging
 from typing import Optional
 
 import disnake
-import sqlalchemy.dialects
-import sqlalchemy.dialects
+from derpz_botlib.database.tables import json_config_store
 from disnake.ext.commands import Cog
-from sqlalchemy.dialects import postgresql
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from math_tavern_bot.database import SqlAlchemyBase
-from math_tavern_bot.database.models import CogConfiguration
 
-json_store = sqlalchemy.Table(
-    "json_store",
-    SqlAlchemyBase.metadata,
-    sqlalchemy.Column("id", sqlalchemy.String, primary_key=True),
-    sqlalchemy.Column("data", postgresql.JSONB),
-)
+class CogConfiguration(BaseModel):
+    pass
 
 
-class SqlAlchemyJsonStore:
+class AsyncSqlAlchemyKvJsonStore:
+    """
+    A key-value store where the keys are strings and the values are JSON objects.
+    This only works with the Postgres engine for now.
+    TODO: Check if it can work with other engines
+    """
+
     def __init__(self, engine: AsyncEngine):
         self.engine = engine
 
@@ -32,7 +31,7 @@ class SqlAlchemyJsonStore:
         """
         async with self.engine.connect() as conn:
             result = await conn.execute(
-                json_store.select().where(json_store.c.id == key)
+                json_config_store.select().where(json_config_store.c.id == key)
             )
             row = result.first()
             if row is None:
@@ -47,7 +46,7 @@ class SqlAlchemyJsonStore:
         """
         async with self.engine.connect() as conn:
             result = await conn.execute(
-                json_store.select().where(json_store.c.id.in_(keys))
+                json_config_store.select().where(json_config_store.c.id.in_(keys))
             )
             if result.rowcount == 0:
                 return None
@@ -61,13 +60,17 @@ class SqlAlchemyJsonStore:
         """
         async with self.engine.connect() as conn:
             maybe_row = await conn.execute(
-                json_store.select().where(json_store.c.id == key)
+                json_config_store.select().where(json_config_store.c.id == key)
             )
             if maybe_row.rowcount == 0:
-                await conn.execute(json_store.insert().values(id=key, data=value))
+                await conn.execute(
+                    json_config_store.insert().values(id=key, data=value)
+                )
             else:
                 await conn.execute(
-                    json_store.update().where(json_store.c.id == key).values(data=value)
+                    json_config_store.update()
+                    .where(json_config_store.c.id == key)
+                    .values(data=value)
                 )
             await conn.commit()
 
@@ -81,7 +84,9 @@ class SqlAlchemyJsonStore:
             # if it does, update it
             # if it doesn't, insert it
             row = await conn.execute(
-                json_store.select().where(json_store.c.id.in_(key_value_map.keys()))
+                json_config_store.select().where(
+                    json_config_store.c.id.in_(key_value_map.keys())
+                )
             )
             if row.rowcount() > 0:
                 for row in row:
@@ -89,15 +94,15 @@ class SqlAlchemyJsonStore:
                     value = row[1]
                     if key in key_value_map:
                         await conn.execute(
-                            json_store.update()
-                            .where(json_store.c.id == key)
+                            json_config_store.update()
+                            .where(json_config_store.c.id == key)
                             .values(data=key_value_map[key])
                         )
                         del key_value_map[key]
             # insert the remaining keys
             if len(key_value_map) > 0:
                 await conn.execute(
-                    json_store.insert(),
+                    json_config_store.insert(),
                     [dict(id=key, data=value) for key, value in key_value_map.items()],
                 )
             await conn.commit()
@@ -106,7 +111,7 @@ class SqlAlchemyJsonStore:
 class CogConfigStore:
     """KV store backed Cog Configuration"""
 
-    def __init__(self, store: SqlAlchemyJsonStore, *, logger: logging.Logger):
+    def __init__(self, store: AsyncSqlAlchemyKvJsonStore, *, logger: logging.Logger):
         self.store = store
         self.sep = "."
         self.logger = logger
@@ -132,7 +137,7 @@ class CogConfigStore:
             map(lambda guild_id: self.build_cog_key(guild_id, cog), guilds)
         )
         cog_config = await self.store.batch_get(desired_configs)
-        self.logger.info("Cog config for %s: %s", cog.qualified_name, cog_config)
+        self.logger.debug("Cog config for %s: %s", cog.qualified_name, cog_config)
         if cog_config is None:
             return None
         # now we need to strip the guild id from the key
@@ -148,8 +153,26 @@ class CogConfigStore:
             guild.name,
             guild.id,
         )
-        self.logger.info("%s", config)
+        self.logger.debug("%s", config)
         key = self.build_cog_key(guild.id, cog)
         persisted_config = json.loads(config.json())
-        self.logger.info("Persisted config: %s", persisted_config)
+        self.logger.debug("Persisted config: %s", persisted_config)
         await self.store.set(key, persisted_config)
+
+    async def batch_set_cog_config(
+        self, cog: Cog, guild_config_map: dict[disnake.Guild, CogConfiguration]
+    ):
+        """
+        Batch set the configuration for a cog. Useful for flushing all the config
+        to the store at once.
+        """
+        self.logger.debug(
+            "Updating Cog %s config for %s guilds",
+            cog.qualified_name,
+            len(guild_config_map),
+        )
+        key_value_map = {
+            self.build_cog_key(guild.id, cog): json.loads(config.json())
+            for guild, config in guild_config_map.items()
+        }
+        await self.store.batch_set(key_value_map)

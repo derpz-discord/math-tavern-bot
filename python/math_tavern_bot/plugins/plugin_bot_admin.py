@@ -1,13 +1,16 @@
 import logging
 import pprint
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 import disnake
+from derpz_botlib.bot_classes import ConfigurableCogsBot
 from disnake.ext import commands
 from sqlalchemy import text
 
-from math_tavern_bot.library.bot_classes import KvStoredBot
+
+def setup(bot: ConfigurableCogsBot):
+    bot.add_cog(BotAdminPlugin(bot))
 
 
 class BotAdminPlugin(commands.Cog):
@@ -16,7 +19,7 @@ class BotAdminPlugin(commands.Cog):
     (also allows for arbitrary SQL execution)
     """
 
-    def __init__(self, bot: KvStoredBot):
+    def __init__(self, bot: ConfigurableCogsBot):
         self.bot = bot
         self.logger = logging.getLogger(__name__)
 
@@ -71,7 +74,7 @@ class BotAdminPlugin(commands.Cog):
 
         # execute with the database connection
         orig = await ctx.send(f"Executing SQL query, please wait.")
-        async with self.bot.db.connect() as conn:
+        async with self.bot.engine.connect() as conn:
             try:
                 result = await conn.execute(text(query))
                 result = result.fetchall()

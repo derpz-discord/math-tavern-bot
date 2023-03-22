@@ -12,3 +12,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.18.0", features = ["extension-module"] }
+lopdf = "0.29.0"

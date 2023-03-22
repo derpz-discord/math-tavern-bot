@@ -1,12 +1,17 @@
+"""
+Plugin that automatically reacts with a configured emoji to configured users
+whenever they send a message.
+
+This is useful for automatically reacting with a sully emoji to a user who
+sends a message that is cringe.
+"""
 from typing import Optional
 
 import disnake
+from derpz_botlib.bot_classes import ConfigurableCogsBot
+from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
+from derpz_botlib.utils import check_in_guild, fmt_user
 from disnake.ext import commands
-
-from math_tavern_bot.database.models import CogConfiguration
-from math_tavern_bot.library.bot_classes import KvStoredBot
-from math_tavern_bot.library.cog import DatabaseConfiguredCog
-from math_tavern_bot.library.utils import check_in_guild, fmt_user
 
 
 class AutoSullyConfig(CogConfiguration):
@@ -14,14 +19,12 @@ class AutoSullyConfig(CogConfiguration):
     sully_users: set[int] = set()
 
 
-class AutoSullyPlugin(DatabaseConfiguredCog):
+class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     """
     Automatically sullies configured users
     """
 
-    config: dict[disnake.Guild, AutoSullyConfig]
-
-    def __init__(self, bot: KvStoredBot):
+    def __init__(self, bot: ConfigurableCogsBot):
         super().__init__(bot, AutoSullyConfig)
         self._sully_emoji: Optional[disnake.Emoji] = None
 
@@ -108,3 +111,7 @@ class AutoSullyPlugin(DatabaseConfiguredCog):
             if guild_config.sully_emoji is not None:
                 emoji = await message.guild.fetch_emoji(guild_config.sully_emoji)
                 await message.add_reaction(emoji)
+
+
+def setup(bot: ConfigurableCogsBot):
+    bot.add_cog(AutoSullyPlugin(bot))

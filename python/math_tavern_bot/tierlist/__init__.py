@@ -1,1 +1,0 @@
-from math_tavern_bot.tierlist.plugin import TierListPlugin

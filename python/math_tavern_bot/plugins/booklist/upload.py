@@ -1,22 +1,20 @@
 import logging
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import aioboto3
 import aiohttp
 import disnake
 import sqlalchemy
-import types_aiobotocore_s3
+from derpz_botlib.database.db import SqlAlchemyBase
 from disnake import ModalInteraction
-from pydantic import BaseModel, Field, validator, ValidationError
+from pydantic import BaseModel, Field, ValidationError, validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
-from sqlalchemy.orm import Session
 
-from math_tavern_bot.book_search.plugin import query_openlibrary_for_isbn
+from math_tavern_bot.plugins.plugin_book_search import query_openlibrary_for_isbn
 
 if TYPE_CHECKING:
     from math_tavern_bot.bot import BookBot
-from math_tavern_bot.database import SqlAlchemyBase
 
 
 # TODO: This entire file needs to be stuffed into some UploadManager state machine thing
@@ -327,7 +325,7 @@ class ConfirmBookMetaView(disnake.ui.View):
     ):
         await interaction.response.send_message("Uploading now... please wait")
         await upload_book_and_insert_to_db(
-            self.book_meta, self.bot.db, self.bot.boto3_sess
+            self.book_meta, self.bot.engine, self.bot.boto3_sess
         )
         await interaction.followup.send("Uploaded successfully", ephemeral=True)
 

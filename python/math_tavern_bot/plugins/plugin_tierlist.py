@@ -8,9 +8,18 @@ For a demonstration, visit the Math Tavern: https://discord.gg/EK5p2KUTxR
 import logging
 
 import disnake
+from derpz_botlib.utils import fmt_user
 from disnake.ext import commands
+from pydantic import BaseModel
 
-from math_tavern_bot.library.utils import fmt_user
+
+class TierList(BaseModel):
+    owner: int
+    name: str
+
+
+def setup(bot: commands.Bot):
+    bot.add_cog(TierListPlugin(bot))
 
 
 class TierListPlugin(commands.Cog):
