@@ -8,11 +8,10 @@ sends a message that is cringe.
 from typing import Optional
 
 import disnake
-from disnake import ApplicationCommandInteraction
-
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
 from derpz_botlib.utils import check_in_guild, fmt_user
+from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
 
 
@@ -130,8 +129,7 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     ) -> None:
         if isinstance(error, commands.EmojiNotFound):
             await inter.response.send_message(
-                "The emoji you specified is not from this server",
-                ephemeral=True
+                "The emoji you specified is not from this server", ephemeral=True
             )
             return
         await super().cog_slash_command_error(inter, error)
