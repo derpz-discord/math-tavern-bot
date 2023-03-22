@@ -43,13 +43,15 @@ class BookInDb(SqlAlchemyBase):
     __tablename__ = "books"
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    title = sqlalchemy.Column(sqlalchemy.String)
-    author = sqlalchemy.Column(sqlalchemy.String)
-    isbn = sqlalchemy.Column(sqlalchemy.String)
+    server = sqlalchemy.Column(sqlalchemy.BigInteger, nullable=False)
+    title = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    author = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    isbn = sqlalchemy.Column(sqlalchemy.String, nullable=False)
     subject = sqlalchemy.Column(sqlalchemy.String)
-    s3_key = sqlalchemy.Column(sqlalchemy.String)
+    s3_key = sqlalchemy.Column(sqlalchemy.String, nullable=False)
 
-    # TODO: Log time uploaded at
+    uploaded_at = sqlalchemy.Column(sqlalchemy.DateTime, server_default=sqlalchemy.func.now())
+    # TODO: Audit log
     # TODO: Allow admins to modify
 
 

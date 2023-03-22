@@ -18,6 +18,24 @@ if TYPE_CHECKING:
 
 # TODO: This entire file needs to be stuffed into some UploadManager state machine thing
 
+class UploadManager:
+    """
+    Manages the upload of a book to the bot.
+    """
+
+    def __init__(
+        self,
+        bot: "BookBot"
+    ):
+        self.bot = bot
+        self.logger = self.bot.logger.getChild(self.__class__.__name__)
+
+    async def start(self):
+        """
+        Starts the upload process
+        """
+        self.logger.info("Starting upload process")
+
 
 class EditBookMetaModal(disnake.ui.Modal):
     """
