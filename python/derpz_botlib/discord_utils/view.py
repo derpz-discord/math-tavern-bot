@@ -27,3 +27,15 @@ class BotAwareView(disnake.ui.View):
     def __init__(self, bot: commands.Bot):
         super().__init__()
         self.bot = bot
+
+
+class MessageAndBotAwareView(MessageAwareView):
+    """
+    A view that is aware of the message and the bot that is using it.
+    """
+
+    bot: commands.Bot
+
+    def __init__(self, message: disnake.Message, bot: commands.Bot):
+        super().__init__(message)
+        self.bot = bot

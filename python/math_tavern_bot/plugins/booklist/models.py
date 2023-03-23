@@ -50,7 +50,9 @@ class BookInDb(SqlAlchemyBase):
     subject = sqlalchemy.Column(sqlalchemy.String)
     s3_key = sqlalchemy.Column(sqlalchemy.String, nullable=False)
 
-    uploaded_at = sqlalchemy.Column(sqlalchemy.DateTime, server_default=sqlalchemy.func.now())
+    uploaded_at = sqlalchemy.Column(
+        sqlalchemy.DateTime, server_default=sqlalchemy.func.now()
+    )
     # TODO: Audit log
     # TODO: Allow admins to modify
 
