@@ -1,19 +1,23 @@
 FROM python:3.10-buster
 
-RUN sudo apt-get update && sudo apt-get install -y \
+RUN apt-get update && apt-get install -y \
     libpq-dev \
     postgresql-client \
     postgresql-client-common \
     python3-pip
 
-COPY . /app
+
+
+RUN pip install poetry==1.4.1
+RUN poetry config virtualenvs.create false
+
+COPY poetry.lock pyproject.toml /app/
 WORKDIR /app
 
-RUN pip install pipx
-RUN pipx install poetry
+RUN poetry install --no-dev --no-interaction --no-ansi
 
-RUN poetry config virtualenvs.create false
-RUN poetry install --no-dev
+COPY . /app
+
 
 WORKDIR /app/python
 ENV PYTHONPATH="."
