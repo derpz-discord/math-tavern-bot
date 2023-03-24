@@ -1,0 +1,14 @@
+version: "3.8"
+networks:
+  pg_net:
+    external: true
+
+services:
+  bot:
+    build:
+        context: .
+        dockerfile: Dockerfile
+    image: derpz-discord/math-tavern-bot:latest
+    container_name: math-tavern-bot
+    restart: unless-stopped
+
