@@ -3,12 +3,16 @@ Plugin that configures channels to automatically purge all messages
 (except pinned ones) on a regular basis.
 
 """
+from collections import deque
+
 import disnake
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import DatabaseConfigurableCog
 from derpz_botlib.database.storage import CogConfiguration
+from derpz_botlib.utils import fmt_guild_channel_include_id
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands, tasks
+from disnake.ext.tasks import Loop
 
 
 class AutoPurgeConfig(CogConfiguration):
@@ -18,7 +22,7 @@ class AutoPurgeConfig(CogConfiguration):
 class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
     def __init__(self, bot: ConfigurableCogsBot):
         super().__init__(bot, AutoPurgeConfig)
-        self._loops = {}
+        self._loops: dict[int, Loop] = {}
 
     async def cog_load(self):
         """
@@ -35,6 +39,31 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
                     )
                     continue
                 self.register_channel_for_auto_purge(channel, interval)
+
+    def cog_unload(self):
+        """
+        Cancels all the auto purge tasks
+        """
+        super().cog_unload()
+        deque(map(self.unregister_channel_for_auto_purge, self._loops.keys()))
+
+    @commands.Cog.listener(name="on_guild_channel_delete")
+    async def on_channel_delete(self, channel: disnake.abc.GuildChannel):
+        """
+        If a channel is deleted, we remove it from the auto purge list
+        """
+        if channel not in self._loops:
+            return
+        self.logger.info(
+            "Channel %s deleted, removing from auto purge list",
+            fmt_guild_channel_include_id(channel),
+        )
+        self.unregister_channel_for_auto_purge(channel.id)
+        # we go ahead and remove it from the config
+        guild_config = self.get_guild_config(channel.guild)
+        if channel.id in guild_config.channel_purge_interval:
+            del guild_config.channel_purge_interval[channel.id]
+            await self.save_guild_config(channel.guild, guild_config)
 
     @commands.slash_command(name="autopurge")
     @commands.guild_only()
@@ -59,8 +88,10 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
             f"purge messages at {interval} seconds."
         )
         # TODO: What if someone changes the topic after this?
-        await channel.edit(topic=f"Auto purge interval: {interval} seconds",
-                           reason="Auto purge interval set")
+        await channel.edit(
+            topic=f"Auto purge interval: {interval} seconds",
+            reason="Auto purge interval set",
+        )
         self.register_channel_for_auto_purge(channel, interval)
 
     @cmd_auto_purge.sub_command(description="Removes a channel from auto purge")
@@ -78,7 +109,7 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
             return
         del guild_config.channel_purge_interval[channel.id]
         await self.save_guild_config(ctx.guild, guild_config)
-        self.unregister_channel_for_auto_purge(channel)
+        self.unregister_channel_for_auto_purge(channel.id)
         await channel.edit(topic=None, reason="Auto purge interval removed")
         await ctx.send(
             f"Removed {channel.mention} from the list of channels to purge messages "
@@ -107,8 +138,10 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         await self.save_guild_config(ctx.guild, guild_config)
         self.edit_purge_interval(channel, interval)
         # TODO: What if someone changes the topic after this?
-        await channel.edit(topic=f"Auto purge interval: {interval} seconds",
-                           reason="Auto purge interval set")
+        await channel.edit(
+            topic=f"Auto purge interval: {interval} seconds",
+            reason="Auto purge interval set",
+        )
         await ctx.send(
             f"Modified the interval at which {channel.mention} is purged to "
             f"{interval} seconds."
@@ -140,8 +173,8 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         loop.change_interval(seconds=interval)
         self._loops[channel.id] = loop
 
-    def unregister_channel_for_auto_purge(self, channel: disnake.TextChannel):
-        loop = self._loops.pop(channel.id)
+    def unregister_channel_for_auto_purge(self, channel_id: int):
+        loop = self._loops.pop(channel_id)
         loop.cancel()
 
     @staticmethod
@@ -150,9 +183,15 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         Purges all messages in a channel except pinned ones.
         """
         await channel.send("\N{WARNING SIGN} Auto purge is purging messages...")
+
+        def purgeable_msg(m: disnake.Message):
+            if not include_pinned:
+                return not m.pinned
+            return True
+
         await channel.purge(
             limit=None,
-            check=lambda m: not m.pinned if include_pinned else True,
+            check=purgeable_msg,
         )
 
 

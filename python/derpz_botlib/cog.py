@@ -5,6 +5,7 @@ from derpz_botlib.bot_classes import (ConfigurableCogsBot, DatabasedBot,
                                       LoggedBot)
 from derpz_botlib.database.storage import CogConfiguration
 from disnake.ext import commands
+from sqlalchemy import Connection
 
 T = typing.TypeVar("T", bound=CogConfiguration)
 
@@ -29,6 +30,7 @@ class DatabasedCog(LoggedCog):
     def __init__(self, bot: DatabasedBot):
         super().__init__(bot)
         self.engine = bot.engine
+        # TODO: Each cog should have its own connection
 
 
 class DatabaseConfigurableCog(typing.Generic[T], LoggedCog):
@@ -65,6 +67,7 @@ class DatabaseConfigurableCog(typing.Generic[T], LoggedCog):
         await self.bot.cog_config_store.set_cog_config(self, guild, self.config[guild])
 
     async def cog_load(self):
+        """Load config from DB when cog is loaded"""
         self.logger.info(f"Initializing {self.__class__.__cog_name__}")
         if len(self.bot.guilds) == 0:
             self.logger.warning("No guilds found. Skipping config load.")
@@ -92,5 +95,7 @@ class DatabaseConfigurableCog(typing.Generic[T], LoggedCog):
         self.logger.info(f"Initialized {self.__class__.__cog_name__}")
 
     def cog_unload(self):
-        # TODO: Flush config to DB
-        pass
+        """Flush config to DB when cog is unloaded"""
+        self.logger.info(f"Flushing config to DB {self.__class__.__cog_name__}")
+        self.bot.cog_config_store.batch_set_cog_config_sync(self, self.config)
+        self.logger.info(f"Unload of {self.__class__.__cog_name__} complete")

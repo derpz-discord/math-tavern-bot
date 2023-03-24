@@ -18,6 +18,10 @@ def fmt_user_include_id(user: disnake.User) -> str:
     return f"{user.name}#{user.discriminator} ({user.id})"
 
 
+def fmt_guild_channel_include_id(channel: disnake.abc.GuildChannel) -> str:
+    return f"{channel.name} ({channel.id}) in {fmt_guild_include_id(channel.guild)}"
+
+
 async def reply_feature_wip(
     ctx: Union[commands.Context, ApplicationCommandInteraction]
 ):
