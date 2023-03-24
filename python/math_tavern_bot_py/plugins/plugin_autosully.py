@@ -133,8 +133,7 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     async def mass_react(
         self,
         ctx: commands.Context,
-        *,
-        emoji: disnake.Emoji = commands.Param(description="The emoji to react with"),
+        emoji: disnake.Emoji
     ):
         if emoji.guild != ctx.guild:
             await ctx.send("The emoji must be from this server")
