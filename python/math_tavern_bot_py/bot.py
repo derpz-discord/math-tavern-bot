@@ -51,7 +51,7 @@ class BookBot(ConfigurableCogsBot):
 
     async def _init_db(self):
         """Creates all the database tables"""
-        from math_tavern_bot_py.plugins.booklist.models import BookInDb
+        # TODO: Reimport all the stuff we need
 
         self.engine_logger.info("Initializing database")
         async with self.engine.begin() as conn:

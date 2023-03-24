@@ -10,7 +10,7 @@ from typing import Optional
 import disnake
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
-from derpz_botlib.utils import check_in_guild, fmt_user
+from derpz_botlib.utils import fmt_user
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
 

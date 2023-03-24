@@ -25,7 +25,7 @@ from derpz_botlib.database.db import (SqlAlchemyBase, intpk, required_int,
 from derpz_botlib.database.storage import CogConfiguration
 from derpz_botlib.discord_utils.view import (DatePickerView,
                                              MessageAndBotAwareView)
-from derpz_botlib.utils import check_in_guild, reply_feature_wip
+from derpz_botlib.utils import reply_feature_wip
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
 from sqlalchemy.orm import Mapped

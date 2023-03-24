@@ -1,8 +1,8 @@
 import disnake
-from derpz_botlib.bot_classes import ConfigurableCogsBot, LoggedBot
-from derpz_botlib.cog import DatabaseConfigurableCog, LoggedCog
+from derpz_botlib.bot_classes import ConfigurableCogsBot
+from derpz_botlib.cog import DatabaseConfigurableCog
 from derpz_botlib.database.storage import CogConfiguration
-from derpz_botlib.utils import check_in_guild, fmt_user, fmt_user_include_id
+from derpz_botlib.utils import fmt_user_include_id
 from disnake import AllowedMentions, ApplicationCommandInteraction
 from disnake.ext import commands
 

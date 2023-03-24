@@ -5,7 +5,6 @@ from typing import Optional
 import disnake
 import sqlalchemy
 from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
-from derpz_botlib.utils import check_in_guild
 from disnake.ext import commands
 from math_tavern_bot_py.bot import BookBot
 from math_tavern_bot_py.plugins.booklist.models import BookInDb

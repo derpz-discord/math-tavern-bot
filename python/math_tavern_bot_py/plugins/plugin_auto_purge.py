@@ -71,6 +71,24 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
     async def cmd_auto_purge(self, ctx: ApplicationCommandInteraction):
         pass
 
+    @commands.command()
+    @commands.guild_only()
+    async def channel_info(self, ctx: commands.GuildContext):
+        """
+        Retrieves information about the auto-purge status of the channel
+        """
+        guild_config = self.get_guild_config(ctx.guild)
+        next_purge_time = self._loops[ctx.channel.id].next_iteration.time()
+
+        if ctx.channel.id in guild_config.channel_purge_interval:
+            await ctx.send(
+                f"This channel is set to purge messages every "
+                f"{guild_config.channel_purge_interval[ctx.channel.id]} seconds.",
+                mention_author=True,
+            )
+        else:
+            await ctx.send("This channel is not set to purge messages at intervals.")
+
     @cmd_auto_purge.sub_command(description="Adds a channel to the auto purge list")
     async def add_channel(
         self,
@@ -86,11 +104,6 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         await ctx.send(
             f"Added {channel.mention} to the list of channels to "
             f"purge messages at {interval} seconds."
-        )
-        # TODO: What if someone changes the topic after this?
-        await channel.edit(
-            topic=f"Auto purge interval: {interval} seconds",
-            reason="Auto purge interval set",
         )
         self.register_channel_for_auto_purge(channel, interval)
 
