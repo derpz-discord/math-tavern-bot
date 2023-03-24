@@ -12,6 +12,12 @@ services:
       POSTGRES_ROOT_PASSWORD: root
     ports:
         - "5433:5433"
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
   bot:
     build:
       context: .
@@ -21,4 +27,35 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-      
+
+  sully_worker_1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_1
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=1
+    entrypoint: python sully_worker.py
+    depends_on:
+      - bot_db
+      - redis
+
+  sully_worker_2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_2
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=2
+    entrypoint: python sully_worker.py
+    depends_on:
+      - bot_db
+      - redis
