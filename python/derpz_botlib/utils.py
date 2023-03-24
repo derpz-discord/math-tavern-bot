@@ -8,7 +8,7 @@ from disnake.ext import commands
 from disnake.ext.commands import CommandError, Context
 
 
-def fmt_user(user: disnake.User) -> str:
+def fmt_user(user: Union[disnake.User, disnake.Member]) -> str:
     return f"{user.name}#{user.discriminator}"
 
 

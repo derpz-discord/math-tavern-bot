@@ -19,6 +19,14 @@ class LoggedCog(commands.Cog):
         self.bot = bot
         self.logger = self.bot.logger.getChild(self.__class__.__cog_name__)
 
+    async def cog_slash_command_error(
+        self, inter: disnake.ApplicationCommandInteraction, error: Exception
+    ) -> None:
+        if isinstance(error, commands.BadArgument):
+            await inter.response.send_message(f"Input error: {error}", ephemeral=True)
+            return
+        self.logger.exception("Error in slash command", exc_info=error)
+
 
 class DatabasedCog(LoggedCog):
     """
@@ -91,7 +99,8 @@ class DatabaseConfigurableCog(typing.Generic[T], LoggedCog):
                 )
             )
         else:
-            self.logger.warning("No config found in DB")
+            # self.logger.warning("No config found in DB")
+            pass
         self.logger.info(f"Initialized {self.__class__.__cog_name__}")
 
     def cog_unload(self):
