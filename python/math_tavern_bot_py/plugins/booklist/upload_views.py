@@ -4,11 +4,11 @@ from typing import Optional
 import disnake
 from derpz_botlib.discord_utils.view import MessageAndBotAwareView
 from disnake import ModalInteraction
-from math_tavern_bot.bot import BookBot
-from math_tavern_bot.plugins.booklist.models import BookMetadata
-from math_tavern_bot.plugins.booklist.upload import \
+from math_tavern_bot_py.bot import BookBot
+from math_tavern_bot_py.plugins.booklist.models import BookMetadata
+from math_tavern_bot_py.plugins.booklist.upload import \
     upload_book_and_insert_to_db
-from math_tavern_bot.plugins.plugin_book_search import \
+from math_tavern_bot_py.plugins.plugin_book_search import \
     query_openlibrary_for_isbn
 from pydantic import ValidationError
 

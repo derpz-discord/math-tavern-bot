@@ -7,9 +7,10 @@ authors = ["derpz-discord <derpz@sotruespace.uk>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "math_tavern_bot"
+name = "math_tavern_bot_rs"
 crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.18.0", features = ["extension-module"] }
 lopdf = "0.29.0"
+pdf = "0.8.0"

@@ -1,7 +1,7 @@
 from os import getenv
 
 from dotenv import load_dotenv
-from math_tavern_bot.bot import BookBot
+from math_tavern_bot_py.bot import BookBot
 
 if __name__ == "__main__":
     load_dotenv()

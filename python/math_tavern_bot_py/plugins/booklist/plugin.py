@@ -7,11 +7,11 @@ import sqlalchemy
 from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
 from derpz_botlib.utils import check_in_guild
 from disnake.ext import commands
-from math_tavern_bot.bot import BookBot
-from math_tavern_bot.plugins.booklist.models import BookInDb
-from math_tavern_bot.plugins.booklist.upload import (download_book_from_db,
-                                                     search_book_in_db)
-from math_tavern_bot.plugins.booklist.upload_views import UploadView
+from math_tavern_bot_py.bot import BookBot
+from math_tavern_bot_py.plugins.booklist.models import BookInDb
+from math_tavern_bot_py.plugins.booklist.upload import (download_book_from_db,
+                                                        search_book_in_db)
+from math_tavern_bot_py.plugins.booklist.upload_views import UploadView
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

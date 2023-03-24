@@ -51,7 +51,7 @@ class BookBot(ConfigurableCogsBot):
 
     async def _init_db(self):
         """Creates all the database tables"""
-        from math_tavern_bot.plugins.booklist.models import BookInDb
+        from math_tavern_bot_py.plugins.booklist.models import BookInDb
 
         self.engine_logger.info("Initializing database")
         async with self.engine.begin() as conn:
@@ -71,8 +71,8 @@ class BookBot(ConfigurableCogsBot):
 
     def load_cogs(self):
         self.logger.info("[bold yellow]Loading cogs[/bold yellow]")
-        self.load_extension("math_tavern_bot.plugins.plugin_bot_admin")
-        self.load_extension("math_tavern_bot.plugins.plugin_pin")
-        self.load_extension("math_tavern_bot.plugins.plugin_tierlist")
-        self.load_extension("math_tavern_bot.plugins.booklist.plugin")
-        self.load_extension("math_tavern_bot.plugins.plugin_autosully")
+        self.load_extension("math_tavern_bot_py.plugins.plugin_bot_admin")
+        self.load_extension("math_tavern_bot_py.plugins.plugin_pin")
+        self.load_extension("math_tavern_bot_py.plugins.plugin_tierlist")
+        self.load_extension("math_tavern_bot_py.plugins.booklist.plugin")
+        self.load_extension("math_tavern_bot_py.plugins.plugin_autosully")

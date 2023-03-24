@@ -1,58 +1,28 @@
 """
 Holds models for the book list functionality of the bot.
 """
-from typing import Optional
 
 import disnake
-import sqlalchemy
-from derpz_botlib.database.db import SqlAlchemyBase
+from derpz_botlib.database.db import (SqlAlchemyBase, intpk, required_int,
+                                      required_str, timestamp)
 from pydantic import BaseModel, Field, validator
-
-
-class Author(BaseModel):
-    """
-    Represents an author of a book. Note that an author could have written
-    multiple books.
-    """
-
-    name: str
-
-
-class Publisher(BaseModel):
-    name: str
-
-
-class Series(BaseModel):
-    """
-    Represents a series of books. Note that a series could have multiple books.
-    """
-
-    name: str
-    publisher: Publisher
-
-
-class Book(BaseModel):
-    title: str
-    author: Author
-    isbn: str
-    edition: int
-    series: Optional[Series]
+from sqlalchemy import VARCHAR
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class BookInDb(SqlAlchemyBase):
     __tablename__ = "books"
 
-    id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
-    server = sqlalchemy.Column(sqlalchemy.BigInteger, nullable=False)
-    title = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    author = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    isbn = sqlalchemy.Column(sqlalchemy.String, nullable=False)
-    subject = sqlalchemy.Column(sqlalchemy.String)
-    s3_key = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    id: Mapped[intpk]
+    server: Mapped[required_int]
+    uploaded_by: Mapped[required_int]
+    title: Mapped[required_str]
+    author: Mapped[required_str]
+    isbn: Mapped[str] = mapped_column(VARCHAR(13), nullable=False)
+    subject: Mapped[str]
+    s3_key: Mapped[required_str]
 
-    uploaded_at = sqlalchemy.Column(
-        sqlalchemy.DateTime, server_default=sqlalchemy.func.now()
-    )
+    uploaded_at: Mapped[timestamp]
     # TODO: Audit log
     # TODO: Allow admins to modify
 

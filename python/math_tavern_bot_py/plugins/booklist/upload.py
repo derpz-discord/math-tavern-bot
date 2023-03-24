@@ -5,16 +5,23 @@ import aioboto3
 import aiohttp
 import disnake
 from disnake.ext import commands
-from math_tavern_bot.plugins.booklist.models import BookInDb, BookMetadata
-from math_tavern_bot.plugins.booklist.upload_views import UploadView
+from math_tavern_bot_py.plugins.booklist.models import BookInDb, BookMetadata
+from math_tavern_bot_py.plugins.booklist.upload_views import UploadView
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 if TYPE_CHECKING:
-    from math_tavern_bot.bot import BookBot
+    from math_tavern_bot_py.bot import BookBot
 
 
 # TODO: This entire file needs to be stuffed into some UploadManager state machine thing
+
+
+class BookListManager:
+    def __init__(self, engine: AsyncEngine, boto3_sess: aioboto3.Session):
+        self.engine = engine
+        self.boto3_sess = boto3_sess
+        self.logger = logging.getLogger(__name__)
 
 
 class UploadManager:
@@ -42,7 +49,7 @@ class UploadManager:
         :param ctx: The context of the command
         :return:
         """
-        self.logger.info("Starting upload lmrocess for %s", url)
+        self.logger.info("Starting upload process for %s", url)
         self._download_url = url
         self._ctx = ctx
 
