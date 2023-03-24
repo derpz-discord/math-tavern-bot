@@ -70,9 +70,13 @@ class BookBot(ConfigurableCogsBot):
             self.engine_logger.info("Tables: %s", tables.fetchall())
 
     def load_cogs(self):
+        # TODO: Dynamic load and unload
         self.logger.info("[bold yellow]Loading cogs[/bold yellow]")
         self.load_extension("math_tavern_bot_py.plugins.plugin_bot_admin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_pin")
-        self.load_extension("math_tavern_bot_py.plugins.plugin_tierlist")
-        self.load_extension("math_tavern_bot_py.plugins.booklist.plugin")
+        # self.load_extension("math_tavern_bot_py.plugins.plugin_tierlist")
+        # self.load_extension("math_tavern_bot_py.plugins.booklist.plugin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_autosully")
+        self.load_extension("math_tavern_bot_py.plugins.plugin_moderation")
+        self.load_extension("math_tavern_bot_py.plugins.plugin_goal_setting")
+        self.load_extension("math_tavern_bot_py.plugins.plugin_auto_purge")

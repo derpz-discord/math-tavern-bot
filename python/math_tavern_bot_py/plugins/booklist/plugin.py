@@ -223,6 +223,7 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
             return
 
         await ctx.edit_original_response(content=f"Found {len(books)} books")
+        # TODO: Paginate
         for book in books:
             # TODO: Extract to function
             embed = disnake.Embed(title=book.title)
@@ -231,9 +232,6 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
             embed.add_field(name="Subject", value=book.subject, inline=False)
             embed.add_field(name="S3 Key", value=book.s3_key, inline=False)
             await ctx.send(embed=embed)
-        await ctx.send(
-            view=PageAwarePaginationView(await ctx.original_response(), last_page=10)
-        )
 
     @cmd_book_list.sub_command()
     async def get_upload_link(self, ctx: disnake.ApplicationCommandInteraction):
@@ -279,7 +277,7 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
             return
         await ctx.send(
             f"Configure your upload of {message.attachments[0].url}",
-            view=UploadView(message.attachments[0].url, msg, self.bot),
+            view=UploadView(message.attachments[0].url, message=msg, bot=self.bot),
         )
 
     @cmd_book_list.sub_command(description="Uploads your book to the book list.")
@@ -294,7 +292,7 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
         """
         # TODO: We should try to download the file here to check if it's valid
         await ctx.send("Processing...")
-        view = UploadView(url, await ctx.original_response(), self.bot)
+        view = UploadView(url, message=await ctx.original_response(), bot=self.bot)
         await view.message.edit(f"Configure your upload of {url}", view=view)
 
     @cmd_book_list.sub_command(description="Download the book from the database")

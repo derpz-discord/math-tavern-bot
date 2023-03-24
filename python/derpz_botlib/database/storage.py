@@ -10,7 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 class CogConfiguration(BaseModel):
-    pass
+    def to_embed(self) -> disnake.Embed:
+        """Super rudimentary way to dump out the config as an embed."""
+        return disnake.Embed(
+            title=self.__class__.__name__, description=json.dumps(self.dict(), indent=4)
+        )
 
 
 class AsyncSqlAlchemyKvJsonStore:

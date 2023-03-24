@@ -4,7 +4,7 @@ Holds models for the book list functionality of the bot.
 
 import disnake
 from derpz_botlib.database.db import (SqlAlchemyBase, intpk, required_int,
-                                      required_str, timestamp)
+                                      required_str, tz_aware_timestamp)
 from pydantic import BaseModel, Field, validator
 from sqlalchemy import VARCHAR
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,7 +22,7 @@ class BookInDb(SqlAlchemyBase):
     subject: Mapped[str]
     s3_key: Mapped[required_str]
 
-    uploaded_at: Mapped[timestamp]
+    uploaded_at: Mapped[tz_aware_timestamp]
     # TODO: Audit log
     # TODO: Allow admins to modify
 

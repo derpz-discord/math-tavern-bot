@@ -83,6 +83,7 @@ class LoggedBot(commands.Bot):
                 context.author,
                 context.message.content,
             )
+            return
 
         if isinstance(
             exception,
@@ -117,6 +118,10 @@ class LoggedBot(commands.Bot):
             "\N{CROSS MARK} An error occurred while running this command",
             ephemeral=True,
         )
+        await interaction.edit_original_response(
+            "\N{CROSS MARK} An error occurred. The issue has been reported."
+        )
+        # TODO: DM me the error
         self.logger.exception(exception, exc_info=exception)
 
 

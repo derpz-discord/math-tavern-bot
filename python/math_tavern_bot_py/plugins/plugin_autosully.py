@@ -66,7 +66,7 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         if user.id == self.bot.user.id:
             await ctx.send("I'm not going to sully myself")
             return
-        if user.id in self.bot.owner_ids:
+        if user.id in self.bot.owner_ids or user.id == self.bot.owner_id:
             await ctx.send("I'm not going to sully my owners")
             return
         guild_config = self.config.get(ctx.guild, AutoSullyConfig())
@@ -108,6 +108,7 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
                 embed=disnake.Embed(
                     title="Sullied Users",
                     description="\n".join(map(lambda u: u.mention, sullied_users)),
+                    colour=disnake.Colour.blurple(),
                 ),
                 allowed_mentions=disnake.AllowedMentions.none(),
             )

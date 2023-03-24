@@ -12,7 +12,7 @@ class SqlAlchemyBase(DeclarativeBase):
 
 
 intpk = Annotated[int, mapped_column(primary_key=True)]
-timestamp = Annotated[
+tz_aware_timestamp = Annotated[
     datetime.datetime,
     mapped_column(
         TIMESTAMP(timezone=True),

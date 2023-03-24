@@ -36,6 +36,20 @@ class BotAdminPlugin(commands.Cog):
         pass
 
     @config.sub_command()
+    @commands.is_owner()
+    async def load_plugin(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        plugin: str = commands.Param(description="The plugin to load"),
+    ):
+        if plugin in self.bot.cogs:
+            await ctx.send(f"Plugin {plugin} already loaded")
+        else:
+            self.bot.load_extension(f"math_tavern_bot_py.plugins.{plugin}")
+            await ctx.send(f"Loaded plugin {plugin}")
+
+    @config.sub_command()
+    @commands.is_owner()
     async def unload_plugin(
         self,
         ctx: disnake.ApplicationCommandInteraction,
