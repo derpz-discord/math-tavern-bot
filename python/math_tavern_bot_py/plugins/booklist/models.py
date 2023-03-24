@@ -1,6 +1,7 @@
 """
 Holds models for the book list functionality of the bot.
 """
+from typing import Optional
 
 import disnake
 from derpz_botlib.database.db import (SqlAlchemyBase, intpk, required_int,
@@ -64,7 +65,7 @@ def check_isbn13(isbn: str) -> bool:
 
 class BookMetadata(BaseModel):
     # TODO: Move this into models.py
-    download_url: str
+    download_url: Optional[str]
     title: str = Field(..., min_length=1)
     author: str = Field(..., min_length=1)
     # TODO: Isbn validation

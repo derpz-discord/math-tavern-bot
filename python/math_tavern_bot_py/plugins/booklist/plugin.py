@@ -10,7 +10,7 @@ from math_tavern_bot_py.bot import BookBot
 from math_tavern_bot_py.plugins.booklist.models import BookInDb
 from math_tavern_bot_py.plugins.booklist.upload import (download_book_from_db,
                                                         search_book_in_db)
-from math_tavern_bot_py.plugins.booklist.upload_views import UploadView
+from math_tavern_bot_py.plugins.booklist.upload_manager import UploadManager
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -232,53 +232,6 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
             embed.add_field(name="S3 Key", value=book.s3_key, inline=False)
             await ctx.send(embed=embed)
 
-    @cmd_book_list.sub_command()
-    async def get_upload_link(self, ctx: disnake.ApplicationCommandInteraction):
-        """
-        Get a link to upload your book to the books list.
-        """
-        # TODO: Implement this
-        await ctx.send("This feature has yet to be implemented")
-
-    @commands.command(name="upload_book_file")
-    async def file_upload(self, ctx: commands.Context):
-        """
-        Uploads a book file to the book list.
-        """
-        if not ctx.message.attachments:
-            wait_timeout = 60
-
-            timestamp = f"<t:{int((datetime.utcnow() + timedelta(seconds=wait_timeout)).timestamp())}:T>"
-
-            orig_msg = await ctx.send(
-                f"Please upload your book file before {timestamp}"
-            )
-
-            message = await self.bot.wait_for(
-                "message",
-                check=lambda m: m.author == ctx.author and m.channel == ctx.channel,
-                timeout=wait_timeout,
-            )
-            if not message.attachments:
-                await orig_msg.edit("No file attached. Aborting")
-                return
-            if len(message.attachments) > 1:
-                await orig_msg.edit(
-                    "More than one file attached. Please only attach one file."
-                )
-                return
-        else:
-            message = ctx.message
-        book_file: disnake.Attachment = message.attachments[0]
-        msg = await ctx.send("Processing")
-        if not book_file.filename.endswith(".pdf"):
-            await msg.edit("Only PDF files are allowed.")
-            return
-        await ctx.send(
-            f"Configure your upload of {message.attachments[0].url}",
-            view=UploadView(message.attachments[0].url, message=msg, bot=self.bot),
-        )
-
     @cmd_book_list.sub_command(description="Uploads your book to the book list.")
     async def upload(
         self,
@@ -286,13 +239,8 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
         *,
         url: str = commands.Param(description="The EXACT DOWNLOAD url of your book"),
     ):
-        """
-        Uploads your book to the book list.
-        """
-        # TODO: We should try to download the file here to check if it's valid
-        await ctx.send("Processing...")
-        view = UploadView(url, message=await ctx.original_response(), bot=self.bot)
-        await view.message.edit(f"Configure your upload of {url}", view=view)
+        manager = UploadManager(self.bot, ctx, url)
+        await manager.show_customize_upload()
 
     @cmd_book_list.sub_command(description="Download the book from the database")
     async def download_book(

@@ -6,50 +6,42 @@ the difficulty of exercises in textbooks.
 For a demonstration, visit the Math Tavern: https://discord.gg/EK5p2KUTxR
 """
 import logging
+from typing import Optional
 
 import disnake
+from derpz_botlib.bot_classes import ConfigurableCogsBot
+from derpz_botlib.cog import DatabaseConfigurableCog
+from derpz_botlib.database.storage import CogConfiguration
 from derpz_botlib.utils import fmt_user
 from disnake.ext import commands
 from pydantic import BaseModel
 
 
-class TierList(BaseModel):
-    owner: int
-    name: str
+class TierListPluginConfiguration(CogConfiguration):
+    tier_list_category: Optional[int] = None
 
 
-def setup(bot: commands.Bot):
+def setup(bot: ConfigurableCogsBot):
     bot.add_cog(TierListPlugin(bot))
 
 
-class TierListPlugin(commands.Cog):
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
-        self.logger = logging.getLogger(__name__)
-        self.config_logger = self.logger.getChild("config")
-        self._documentation = {
-            self.tier_list_category: disnake.Embed(
-                title="tier_list_category",
-                description="Sets the category for which tier "
-                "list channels will be created in. Note that the bot will "
-                "fully manage the channels in this category and any "
-                "channels that are not created by the bot will be "
-                "instantly vaporized.",
-            )
-        }
-
-    async def cog_load(self):
-        self.logger.info("TierList plugin loaded")
+class TierListPlugin(DatabaseConfigurableCog[TierListPluginConfiguration]):
+    def __init__(self, bot: ConfigurableCogsBot):
+        super().__init__(bot, TierListPluginConfiguration)
 
     @commands.slash_command(name="tierlist")
     async def tier_list(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
-    @tier_list.sub_command_group()
-    async def config(self, ctx: disnake.ApplicationCommandInteraction):
+    @tier_list.sub_command_group(name="config")
+    async def cmd_config(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
-    @config.sub_command(
+    @cmd_config.sub_command(description="Dumps the config")
+    async def dump_config(self, ctx: disnake.ApplicationCommandInteraction):
+        await ctx.send(embed=self.get_guild_config(ctx.guild).to_embed())
+
+    @cmd_config.sub_command(
         description="Configures the category for which"
         " tier list channels will be created in"
     )
@@ -61,25 +53,19 @@ class TierListPlugin(commands.Cog):
             description="Category to create tier list channels in"
         ),
     ):
-        self.config_logger.info(
-            "User %s (id: %s) set tier list category to %s (id: %s)",
-            fmt_user(ctx.user),
-            ctx.user.id,
-            category.name,
-            category.id,
-        )
         await ctx.send(f"Setting tier list category to {category.mention}")
-        # TODO: Persist to DB
+        guild_config = self.get_guild_config(ctx.guild)
+        guild_config.tier_list_category = category.id
+        await self.save_guild_config(ctx.guild, guild_config)
 
-    @config.sub_command()
-    async def documentation(self, ctx: disnake.ApplicationCommandInteraction):
-        """
-        Documentation for config options
-        """
-        await ctx.send(
-            "Documentation for config options",
-            embeds=list(self._documentation.values()),
-        )
+    @tier_list.sub_command(description="Requests a tier list")
+    async def request(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        *,
+        name: str = commands.Param(description="Name of the tier list"),
+    ):
+        await ctx.send(f"Requesting the tier list: {name}")
 
     @tier_list.sub_command(description="Creates a new tier list")
     @commands.has_permissions(manage_channels=True)
@@ -98,14 +84,4 @@ class TierListPlugin(commands.Cog):
             channel_name,
         )
         await ctx.send(f"Creating the tier list: #{channel_name}")
-        # TODO: actually do it
-
-    # handler for no permission
-    @create.error
-    async def create_error(self, ctx: disnake.ApplicationCommandInteraction, error):
-        if isinstance(error, commands.MissingPermissions):
-            await ctx.send(
-                "You do not have the required permissions to create a tier list"
-            )
-        else:
-            raise error
+        # TODO: WIP

@@ -1,9 +1,13 @@
 import logging
-from typing import Optional
+from typing import Optional, Union
 
+import aioboto3
+import aiohttp
 import disnake
-from derpz_botlib.discord_utils.view import MessageAndBotAwareView
+from derpz_botlib.discord_utils.view import (BotAwareView,
+                                             MessageAndBotAwareView)
 from disnake import ModalInteraction
+from disnake.ext import commands
 from math_tavern_bot_py.bot import BookBot
 from math_tavern_bot_py.plugins.booklist.models import BookMetadata
 from math_tavern_bot_py.plugins.booklist.upload import \
@@ -11,6 +15,42 @@ from math_tavern_bot_py.plugins.booklist.upload import \
 from math_tavern_bot_py.plugins.plugin_book_search import \
     query_openlibrary_for_isbn
 from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+
+class BookListManager:
+    def __init__(self, engine: AsyncEngine, boto3_sess: aioboto3.Session):
+        self.engine = engine
+        self.boto3_sess = boto3_sess
+        self.logger = logging.getLogger(__name__)
+
+
+class UploadManager:
+    """
+    Manages the process of uploading a book.
+    """
+
+    def __init__(
+        self, bot: "BookBot", ctx: disnake.ApplicationCommandInteraction, url: str
+    ):
+        self.bot = bot
+        self.logger = self.bot.logger.getChild(self.__class__.__name__)
+        self._book_meta: Optional[BookMetadata] = None
+        self._download_url: str = url
+        self._ctx = ctx
+
+    async def _start_upload_process(self):
+        """
+        Starts the upload process for a book.
+        """
+        self.logger.info("Starting upload process for %s", self._download_url)
+        await self.show_customize_upload()
+
+    async def show_customize_upload(self):
+        await self._ctx.send(
+            "Customize your upload",
+            view=UploadView(file_url=self._download_url, bot=self.bot),
+        )
 
 
 class EditBookMetaModal(disnake.ui.Modal):
@@ -98,6 +138,9 @@ class EditBookMetaModal(disnake.ui.Modal):
                 subject=data["book_subject"],
             )
             await inter.response.send_message(
+                "Please confirm your metadata", ephemeral=True
+            )
+            await inter.edit_original_message(
                 embed=meta.to_embed(),
                 view=ConfirmBookMetaView(meta, inter.message, self.bot),
             )
@@ -117,9 +160,6 @@ class EditBookMetaModal(disnake.ui.Modal):
         await interaction.send(
             "An error occurred while processing this modal", ephemeral=True
         )
-
-    async def on_close(self, interaction):
-        await interaction.response.send_message("Cancelled", ephemeral=True)
 
 
 class ConfirmBookMetaView(MessageAndBotAwareView):
@@ -155,7 +195,7 @@ class ConfirmBookMetaView(MessageAndBotAwareView):
         await self.message.edit("Timed out waiting for input", view=None)
 
 
-class InputIsbnModal(disnake.ui.Modal):
+class InputIsbnForUploadModal(disnake.ui.Modal):
     def __init__(self):
         components = [
             disnake.ui.TextInput(
@@ -199,28 +239,27 @@ class InputIsbnModal(disnake.ui.Modal):
             )
             return
         book = books_found.docs[0]
-        embed = disnake.Embed(title="Book Metadata")
         # TODO: using magic string schema. model properly
-        embed.add_field(name="Title", value=book["title"], inline=False)
-        embed.add_field(name="Author", value=book["author_name"], inline=False)
-        embed.add_field(name="ISBN", value=book["isbn"], inline=False)
-        embed.add_field(
-            name="Pages", value=book["number_of_pages_median"], inline=False
+        metadata = BookMetadata(
+            title=book["title"],
+            author=book["author_name"],
+            isbn=isbn,
+            subject=", ".join(book["subject"]),
         )
-        embed.add_field(name="Publisher", value=book["publisher"], inline=False)
+
         await inter.edit_original_response(
-            "\N{WHITE HEAVY CHECK MARK} Search completed", embed=embed
+            "\N{WHITE HEAVY CHECK MARK} Search completed", embed=metadata.to_embed()
         )
 
 
-class UploadView(MessageAndBotAwareView):
+class UploadView(BotAwareView):
     bot: "BookBot"
 
-    def __init__(self, file_url: str, *, message: disnake.Message, bot: "BookBot"):
-        super().__init__(message, bot)
+    def __init__(self, file_url: str, *, bot: "BookBot"):
+        super().__init__(bot)
         self.file_url = file_url
 
-    @disnake.ui.button(label="Edit Book Metadata", style=disnake.ButtonStyle.primary)
+    @disnake.ui.button(label="Manual input", style=disnake.ButtonStyle.primary)
     async def edit_book_metadata(
         self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
@@ -228,9 +267,23 @@ class UploadView(MessageAndBotAwareView):
             EditBookMetaModal(file_url=self.file_url, bot=self.bot)
         )
 
+    @disnake.ui.button(label="Auto-fill with ISBN", style=disnake.ButtonStyle.primary)
+    async def autofill_with_isbn(
+        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
+        await interaction.response.send_modal(InputIsbnForUploadModal())
+
+    @disnake.ui.button(label="Auto-parse upload", style=disnake.ButtonStyle.primary)
+    async def auto_parse_upload(
+        self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
+    ):
+        # TODO
+        await interaction.response.send_message("Parsing now... please wait")
+
     @disnake.ui.button(label="Cancel", style=disnake.ButtonStyle.danger)
     async def cancel(
         self, button: disnake.ui.Button, interaction: disnake.MessageInteraction
     ):
-        await interaction.response.send_message("Cancelled", ephemeral=True)
+        await interaction.response.send_message("Upload cancelled", ephemeral=True)
+        await interaction.message.edit("User cancelled upload", view=None)
         self.stop()

@@ -74,7 +74,7 @@ class BookBot(ConfigurableCogsBot):
         self.load_extension("math_tavern_bot_py.plugins.plugin_bot_admin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_pin")
         # self.load_extension("math_tavern_bot_py.plugins.plugin_tierlist")
-        # self.load_extension("math_tavern_bot_py.plugins.booklist.plugin")
+        self.load_extension("math_tavern_bot_py.plugins.booklist.plugin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_autosully")
         self.load_extension("math_tavern_bot_py.plugins.plugin_moderation")
         self.load_extension("math_tavern_bot_py.plugins.plugin_goal_setting")

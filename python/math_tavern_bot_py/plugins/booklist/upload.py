@@ -1,72 +1,17 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 import aioboto3
 import aiohttp
-import disnake
-from disnake.ext import commands
 from math_tavern_bot_py.plugins.booklist.models import BookInDb, BookMetadata
-from math_tavern_bot_py.plugins.booklist.upload_views import UploadView
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 if TYPE_CHECKING:
-    from math_tavern_bot_py.bot import BookBot
+    pass
 
 
 # TODO: This entire file needs to be stuffed into some UploadManager state machine thing
-
-
-class BookListManager:
-    def __init__(self, engine: AsyncEngine, boto3_sess: aioboto3.Session):
-        self.engine = engine
-        self.boto3_sess = boto3_sess
-        self.logger = logging.getLogger(__name__)
-
-
-class UploadManager:
-    """
-    Manages the process of uploading a book.
-    """
-
-    def __init__(self, bot: "BookBot"):
-        self.bot = bot
-        self.logger = self.bot.logger.getChild(self.__class__.__name__)
-        self._book_meta: Optional[BookMetadata] = None
-        self._download_url: Optional[str] = None
-        self._ctx: Optional[
-            Union[commands.Context, disnake.ApplicationCommandInteraction]
-        ] = None
-
-    async def start_upload_process(
-        self,
-        url: str,
-        ctx: Union[commands.Context, disnake.ApplicationCommandInteraction],
-    ):
-        """
-        Starts the upload process for a book.
-        :param url: The URL of the book to upload
-        :param ctx: The context of the command
-        :return:
-        """
-        self.logger.info("Starting upload process for %s", url)
-        self._download_url = url
-        self._ctx = ctx
-
-    @staticmethod
-    async def test_download_uploaded_book(url: str):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                if resp.status != 200:
-                    raise RuntimeError("Could not download book")
-                return await resp.read()
-
-    async def _display_edit_meta_message(self, msg: disnake.Message):
-        view = UploadView(file_url=self._download_url, bot=self.bot, message=msg)
-        await msg.edit(
-            content="Please enter the metadata for the book",
-            view=view,
-        )
 
 
 async def search_book_in_db(
