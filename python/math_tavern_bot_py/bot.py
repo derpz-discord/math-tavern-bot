@@ -1,11 +1,10 @@
-import aioboto3
 import disnake
 import sqlalchemy
-import types_aiobotocore_s3
-from derpz_botlib.bot_classes import ConfigurableCogsBot
-from derpz_botlib.database.db import SqlAlchemyBase
 from disnake.ext import commands
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+from derpz_botlib.bot_classes import ConfigurableCogsBot
+from derpz_botlib.database.db import SqlAlchemyBase
 
 
 # TODO:
@@ -24,29 +23,13 @@ class BookBot(ConfigurableCogsBot):
             test_guilds=[1072179290671685753, 1073267404110561353],
             owner_ids=[196556976866459648],
         )
-        # TODO: Make this configurable
-        self.boto3_sess = aioboto3.Session(
-            aws_access_key_id="minioadmin", aws_secret_access_key="minioadmin"
-        )
+
         self._client_id = oauth_client_id
 
     async def on_ready(self):
         self.logger.info(f"We have logged in as [cyan]{self.user}[/cyan]")
         self.logger.info(f"We are in {len(self.guilds)} servers")
 
-        # TODO: Hardcoded
-        try:
-            # TODO: Hardcoded
-            async with self.boto3_sess.resource(
-                "s3", endpoint_url="http://localhost:9090"
-            ) as s3:
-                s3: types_aiobotocore_s3.S3ServiceResource
-                bucket = await s3.Bucket("bookbot")
-                self.logger.info("S3 connection successful. Bucket: %s", vars(bucket))
-        except Exception as e:
-            self.logger.error("S3 connection failed: %s", e)
-            self.logger.exception(e)
-            await self.close()
         self.load_cogs()
         await self.change_presence(activity=disnake.Game(name="bot ready"))
 
