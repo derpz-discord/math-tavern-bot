@@ -12,6 +12,7 @@ from typing import Optional
 import disnake
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import DatabaseConfigurableCog
+from derpz_botlib.database.db import SqlAlchemyBase
 from derpz_botlib.database.storage import CogConfiguration
 from derpz_botlib.utils import fmt_guild_include_id, fmt_user
 from disnake.ext import commands
@@ -60,6 +61,14 @@ class TierListPlugin(DatabaseConfigurableCog[TierListPluginConfiguration]):
             create_private_threads=True,
             manage_messages=True,
         )
+
+    async def cog_load(self):
+        await super().cog_load()
+        # create the table if it doesn't exist
+        # create the table if it doesn't exist
+        async with self.bot.engine.begin() as conn:
+            self.logger.info("Attempting to create table if it doesn't exist")
+            await conn.run_sync(SqlAlchemyBase.metadata.create_all)
 
     @commands.slash_command(name="tierlist")
     async def tier_list(self, ctx: disnake.ApplicationCommandInteraction):
