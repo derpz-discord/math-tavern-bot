@@ -1,18 +1,26 @@
 import disnake
-from derpz_botlib.bot_classes import LoggedBot
-from derpz_botlib.cog import LoggedCog
+from derpz_botlib.bot_classes import ConfigurableCogsBot, LoggedBot
+from derpz_botlib.cog import DatabaseConfigurableCog, LoggedCog
+from derpz_botlib.database.storage import CogConfiguration
 from derpz_botlib.utils import check_in_guild, fmt_user, fmt_user_include_id
 from disnake import AllowedMentions, ApplicationCommandInteraction
 from disnake.ext import commands
 
 
-class ModerationPlugin(LoggedCog):
+class ModerationPluginConfig(CogConfiguration):
+    psuedo_muted_users: set[int] = set()
+
+
+class ModerationPlugin(DatabaseConfigurableCog[ModerationPluginConfig]):
     """
     Cog for performing moderation tasks with the bot
+
+    TODO:
+    - Finer grained permissions
     """
 
-    def __init__(self, bot: LoggedBot):
-        super().__init__(bot)
+    def __init__(self, bot: ConfigurableCogsBot):
+        super().__init__(bot, ModerationPluginConfig)
 
     async def cog_after_slash_command_invoke(
         self, inter: ApplicationCommandInteraction
@@ -28,7 +36,7 @@ class ModerationPlugin(LoggedCog):
         pass
 
     @moderation.sub_command()
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def get_role_position(
         self, ctx: ApplicationCommandInteraction, *, role: disnake.Role
     ):
@@ -41,7 +49,7 @@ class ModerationPlugin(LoggedCog):
         )
 
     @moderation.sub_command()
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def list_roles_and_positions(self, ctx: ApplicationCommandInteraction):
         """
         Lists all roles and their positions
@@ -59,7 +67,7 @@ class ModerationPlugin(LoggedCog):
     @moderation.sub_command()
     @commands.has_permissions(manage_roles=True)
     @commands.is_owner()
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def move_role(
         self,
         ctx: ApplicationCommandInteraction,
@@ -84,7 +92,7 @@ class ModerationPlugin(LoggedCog):
     @moderation.sub_command()
     @commands.has_permissions(manage_roles=True)
     @commands.is_owner()
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def set_role_position(
         self, ctx: ApplicationCommandInteraction, *, role: disnake.Role, position: int
     ):
@@ -99,6 +107,50 @@ class ModerationPlugin(LoggedCog):
             allowed_mentions=AllowedMentions.none(),
         )
 
+    @moderation.sub_command()
+    @commands.has_permissions(manage_roles=True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def remove_role(
+        self,
+        ctx: ApplicationCommandInteraction,
+        *,
+        user: disnake.Member,
+        role: disnake.Role,
+    ):
+        """
+        Removes a role from a user
+        """
+        await user.remove_roles(
+            role, reason=f"Requested by " f"{fmt_user_include_id(ctx.author)}"
+        )
+        await ctx.send(
+            f"Removed {role.mention} from {user.mention}",
+            allowed_mentions=AllowedMentions.none(),
+        )
 
-def setup(bot: LoggedBot):
+    @moderation.sub_command()
+    @commands.has_permissions(manage_roles=True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def add_role(
+        self,
+        ctx: ApplicationCommandInteraction,
+        *,
+        user: disnake.Member,
+        role: disnake.Role,
+    ):
+        """
+        Adds a role to a user
+        """
+        await user.add_roles(
+            role, reason=f"Requested by {fmt_user_include_id(ctx.author)}"
+        )
+        await ctx.send(
+            f"Added {role.mention} to {user.mention}",
+            allowed_mentions=AllowedMentions.none(),
+        )
+
+
+def setup(bot: ConfigurableCogsBot):
     bot.add_cog(ModerationPlugin(bot))

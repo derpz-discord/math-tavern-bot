@@ -37,7 +37,7 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         description="Sets the emoji which will be used to sully users"
     )
     @commands.has_permissions(manage_emojis=True)
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def set_sully(
         self,
         ctx: disnake.ApplicationCommandInteraction,
@@ -57,7 +57,7 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
 
     @cmd_auto_sully.sub_command(description="Marks a user for automatic sullies")
     @commands.has_permissions(manage_messages=True)
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def sully_user(
         self,
         ctx: disnake.ApplicationCommandInteraction,

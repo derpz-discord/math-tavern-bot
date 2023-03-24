@@ -31,7 +31,7 @@ class PinMessagePlugin(DatabaseConfigurableCog[PinConfig]):
 
     @pin_config.sub_command(description="Adds a role which can pin messages")
     @commands.has_permissions(manage_roles=True)
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def add_pin_role(
         self,
         ctx: disnake.ApplicationCommandInteraction,
@@ -53,7 +53,7 @@ class PinMessagePlugin(DatabaseConfigurableCog[PinConfig]):
         description="Removes role from list of roles which can pin messages"
     )
     @commands.has_permissions(manage_roles=True)
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def remove_pin_role(
         self,
         ctx: disnake.ApplicationCommandInteraction,
@@ -74,7 +74,7 @@ class PinMessagePlugin(DatabaseConfigurableCog[PinConfig]):
         )
 
     @commands.command("pinroles")
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def list_pin_roles(self, ctx: commands.Context):
         """
         List the roles that can pin messages.
@@ -97,7 +97,7 @@ class PinMessagePlugin(DatabaseConfigurableCog[PinConfig]):
         )
 
     @commands.command("pin")
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def pin_message(self, ctx: commands.Context):
         """
         Pins the message you are replying to.
@@ -122,7 +122,7 @@ class PinMessagePlugin(DatabaseConfigurableCog[PinConfig]):
             await ctx.message.add_reaction("\N{CROSS MARK}")
 
     @commands.command("unpin")
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def unpin_message(self, ctx: commands.Context):
         """
         Unpins the message you are replying to.

@@ -3,10 +3,13 @@
 Join us: https://discord.gg/EK5p2KUTxR
 
 ## Development
-`maturin build --release`
 
-### Local dev
+You need rust and poetry to build the bot.
+
 ```shell
 poetry config virtualenvs.in-project true
-poetry install
+poetry uppdate
 ```
+
+Then install the rust modules `maturin develop`
+

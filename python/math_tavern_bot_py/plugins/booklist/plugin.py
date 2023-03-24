@@ -30,7 +30,7 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
     def __init__(self, bot: BookBot):
         super().__init__(bot, BookListPluginConfig)
 
-    @commands.slash_command(name="book_list")
+    @commands.slash_command(name="booklist")
     async def cmd_book_list(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
@@ -91,7 +91,7 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
             await replied.delete()
 
     @config.sub_command(description="Sets the book list channel")
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def book_list_channel(
         self,
         ctx: disnake.ApplicationCommandInteraction,
@@ -120,7 +120,7 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
         )
 
     @maintenance.sub_command(description="Re syncs the book list channel")
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     @commands.has_permissions(manage_messages=True, manage_channels=True)
     async def sync_books_list(self, ctx: disnake.ApplicationCommandInteraction):
         """
@@ -164,7 +164,7 @@ class BookListPlugin(DatabaseConfigurableCog[BookListPluginConfig]):
     @maintenance.sub_command(
         description="Cleans up non bot messages in the book list channel"
     )
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     @commands.has_permissions(manage_messages=True, manage_channels=True)
     async def cleanup_book_list_channel(
         self, ctx: disnake.ApplicationCommandInteraction

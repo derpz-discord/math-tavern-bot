@@ -88,7 +88,7 @@ class GoalSettingPlugin(DatabaseConfigurableCog[GoalSettingPluginConfig]):
 
     @cmd_goal_plugin_config.sub_command(description="Sets the study role")
     @commands.has_permissions(manage_roles=True)
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def set_study_role(
         self,
         ctx: ApplicationCommandInteraction,
@@ -107,7 +107,7 @@ class GoalSettingPlugin(DatabaseConfigurableCog[GoalSettingPluginConfig]):
 
     @cmd_goal_plugin_config.sub_command(description="Dumps the config")
     @commands.has_permissions(manage_roles=True)
-    @commands.check(check_in_guild)
+    @commands.guild_only()
     async def dump_config(
         self,
         ctx: ApplicationCommandInteraction,
