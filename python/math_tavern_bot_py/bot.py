@@ -1,10 +1,9 @@
 import disnake
 import sqlalchemy
-from disnake.ext import commands
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.database.db import SqlAlchemyBase
+from disnake.ext import commands
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 
 # TODO:

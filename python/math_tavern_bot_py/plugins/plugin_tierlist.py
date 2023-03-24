@@ -62,14 +62,6 @@ class TierListPlugin(DatabaseConfigurableCog[TierListPluginConfiguration]):
             manage_messages=True,
         )
 
-    async def cog_load(self):
-        await super().cog_load()
-        # create the table if it doesn't exist
-        # create the table if it doesn't exist
-        async with self.bot.engine.begin() as conn:
-            self.logger.info("Attempting to create table if it doesn't exist")
-            await conn.run_sync(SqlAlchemyBase.metadata.create_all)
-
     @commands.slash_command(name="tierlist")
     async def tier_list(self, ctx: disnake.ApplicationCommandInteraction):
         pass
