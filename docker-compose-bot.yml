@@ -11,4 +11,6 @@ services:
     image: derpz-discord/math-tavern-bot:latest
     container_name: math-tavern-bot
     restart: unless-stopped
+    env_file:
+      - .env
 
