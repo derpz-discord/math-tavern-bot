@@ -22,6 +22,7 @@ class BookBot(ConfigurableCogsBot):
             command_prefix=".",
             intents=disnake.Intents.all(),
             test_guilds=[1072179290671685753, 1073267404110561353],
+            owner_ids=[196556976866459648],
         )
         # TODO: Make this configurable
         self.boto3_sess = aioboto3.Session(
@@ -50,7 +51,6 @@ class BookBot(ConfigurableCogsBot):
 
     async def _init_db(self):
         """Creates all the database tables"""
-        # TODO: Reimport all the stuff we need
 
         self.engine_logger.info("Initializing database")
         async with self.engine.begin() as conn:
@@ -73,10 +73,11 @@ class BookBot(ConfigurableCogsBot):
         self.logger.info("[bold yellow]Loading cogs[/bold yellow]")
         self.load_extension("math_tavern_bot_py.plugins.plugin_bot_admin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_pin")
-        self.load_extension("math_tavern_bot_py.plugins.booklist.plugin")
+        # self.load_extension("math_tavern_bot_py.plugins.booklist.plugin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_autosully")
         self.load_extension("math_tavern_bot_py.plugins.plugin_moderation")
         self.load_extension("math_tavern_bot_py.plugins.plugin_goal_setting")
         self.load_extension("math_tavern_bot_py.plugins.plugin_auto_purge")
 
         self.load_extension("math_tavern_bot_py.plugins.plugin_tierlist")
+        self.load_extension("math_tavern_bot_py.plugins.plugin_sticky_roles")

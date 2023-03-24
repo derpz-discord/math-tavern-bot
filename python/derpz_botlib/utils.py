@@ -9,6 +9,7 @@ from disnake.ext.commands import CommandError, Context
 
 
 def fmt_user(user: Union[disnake.User, disnake.Member]) -> str:
+    """Formats a user to username#discriminator"""
     return f"{user.name}#{user.discriminator}"
 
 
@@ -16,8 +17,10 @@ def fmt_guild_include_id(guild: disnake.Guild) -> str:
     return f"{guild.name} ({guild.id})"
 
 
-def fmt_user_include_id(user: disnake.User) -> str:
-    return f"{user.name}#{user.discriminator} ({user.id})"
+def fmt_user_include_id(user: Union[disnake.User, disnake.Member]) -> str:
+    """Formats a user to username#discriminator (id)
+    Useful for logging"""
+    return f"{fmt_user(user)} ({user.id})"
 
 
 def fmt_guild_channel_include_id(channel: disnake.abc.GuildChannel) -> str:

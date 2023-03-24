@@ -1,6 +1,7 @@
 import datetime
 from typing import Annotated
 
+import sqlalchemy
 from sqlalchemy import TIMESTAMP, MetaData, func
 from sqlalchemy.orm import DeclarativeBase, mapped_column
 
@@ -22,3 +23,5 @@ tz_aware_timestamp = Annotated[
 ]
 required_str = Annotated[str, mapped_column(nullable=False)]
 required_int = Annotated[int, mapped_column(nullable=False)]
+
+required_bigint = Annotated[int, mapped_column(sqlalchemy.BIGINT, nullable=False)]
