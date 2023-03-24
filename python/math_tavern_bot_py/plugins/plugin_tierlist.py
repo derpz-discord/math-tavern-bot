@@ -67,14 +67,18 @@ class TierListPlugin(DatabaseConfigurableCog[TierListPluginConfiguration]):
         pass
 
     @tier_list.sub_command_group(name="config")
+    @commands.has_permissions(administrator=True)
     async def cmd_config(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
     @tier_list.sub_command_group(name="maintenance")
+    @commands.has_permissions(administrator=True)
     async def cmd_maintenance(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
     @cmd_maintenance.sub_command(description="Re-syncs all tier lists")
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
     async def resync_all(self, ctx: disnake.ApplicationCommandInteraction):
         guild_config = self.get_guild_config(ctx.guild)
         tier_list_category = ctx.guild.get_channel(guild_config.tier_list_category)
@@ -119,12 +123,16 @@ class TierListPlugin(DatabaseConfigurableCog[TierListPluginConfiguration]):
         await channel.edit(overwrites=new_overwrites)
 
     @cmd_config.sub_command(description="Dumps the config")
+    @commands.has_permissions(administrator=True)
+    @commands.guild_only()
     async def dump_config(self, ctx: disnake.ApplicationCommandInteraction):
         await ctx.send(embed=self.get_guild_config(ctx.guild).to_embed())
 
     @cmd_config.sub_command(
         description="Configures the category where tier list channels will be created"
     )
+    @commands.has_permissions(manage_channels=True)
+    @commands.guild_only()
     async def tier_list_category(
         self,
         ctx: disnake.ApplicationCommandInteraction,
