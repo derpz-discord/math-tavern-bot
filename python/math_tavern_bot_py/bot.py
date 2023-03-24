@@ -15,7 +15,7 @@ class BotHelp(commands.HelpCommand):
 
 
 class BookBot(ConfigurableCogsBot):
-    def __init__(self, db_url: str):
+    def __init__(self, db_url: str, oauth_client_id: str):
         engine = create_async_engine(db_url)
         super().__init__(
             engine=engine,
@@ -28,6 +28,7 @@ class BookBot(ConfigurableCogsBot):
         self.boto3_sess = aioboto3.Session(
             aws_access_key_id="minioadmin", aws_secret_access_key="minioadmin"
         )
+        self._client_id = oauth_client_id
 
     async def on_ready(self):
         self.logger.info(f"We have logged in as [cyan]{self.user}[/cyan]")
@@ -67,6 +68,19 @@ class BookBot(ConfigurableCogsBot):
             )
 
             self.engine_logger.info("Tables: %s", tables.fetchall())
+
+    @commands.command()
+    async def about(self, ctx: commands.Context):
+        embed = disnake.Embed(title="About")
+        embed.add_field(
+            name="Source", value="https://github.com/derpz-discord/math-tavern-bot"
+        )
+        embed.add_field(
+            name="Invite",
+            value=disnake.utils.oauth_url(
+                self._client_id, permissions=disnake.Permissions.administrator()
+            ),
+        )
 
     def load_cogs(self):
         # TODO: Dynamic load and unload
