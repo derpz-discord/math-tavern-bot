@@ -5,19 +5,29 @@ whenever they send a message.
 This is useful for automatically reacting with a sully emoji to a user who
 sends a message that is cringe.
 """
+from os import getenv
 from typing import Optional
 
+import aioredis
 import disnake
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
 from derpz_botlib.utils import fmt_user
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
+from pydantic import BaseModel
 
 
 class AutoSullyConfig(CogConfiguration):
     sully_emoji: Optional[int] = None
     sully_users: set[int] = set()
+
+
+class AutoSullyRequest(BaseModel):
+    guild_id: int
+    channel_id: int
+    message_id: int
+    emoji_id: int
 
 
 class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
@@ -28,6 +38,8 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     def __init__(self, bot: ConfigurableCogsBot):
         super().__init__(bot, AutoSullyConfig)
         self._sully_emoji: Optional[disnake.Emoji] = None
+        # TODO: Refactor this out of here
+        self.redis_conn = aioredis.Redis.from_url(getenv("REDIS_URL"))
 
     @commands.slash_command(name="autosully")
     async def cmd_auto_sully(self, ctx: disnake.ApplicationCommandInteraction):
@@ -115,6 +127,32 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         else:
             await ctx.send("No users are currently being autosullied")
 
+    @commands.command(description="Mass reacts to a message", name="massreact")
+    @commands.guild_only()
+    @commands.has_permissions(manage_messages=True)
+    async def mass_react(
+        self,
+        ctx: commands.Context,
+        *,
+        emoji: disnake.Emoji = commands.Param(description="The emoji to react with"),
+    ):
+        if emoji.guild != ctx.guild:
+            await ctx.send("The emoji must be from this server")
+            return
+        if ctx.message.reference is None:
+            await ctx.send("You must reply to a message to mass react to it")
+            return
+        message = await ctx.fetch_message(ctx.message.reference.message_id)
+        await message.add_reaction(emoji)
+        await self.publish_sully_request(
+            AutoSullyRequest(
+                guild_id=ctx.guild.id,
+                channel_id=message.channel.id,
+                message_id=message.id,
+                emoji_id=emoji.id,
+            )
+        )
+
     @commands.Cog.listener()
     async def on_message(self, message: disnake.Message):
         if not message.guild:
@@ -124,6 +162,11 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
             if guild_config.sully_emoji is not None:
                 emoji = await message.guild.fetch_emoji(guild_config.sully_emoji)
                 await message.add_reaction(emoji)
+
+    async def publish_sully_request(self, req: AutoSullyRequest):
+        """Requests for mass sullying from the sully army"""
+        # TODO: Hardcoded redis channel
+        await self.redis_conn.publish("autosully", req.json())
 
     async def cog_slash_command_error(
         self, inter: ApplicationCommandInteraction, error: Exception

@@ -31,7 +31,7 @@ services:
   sully_worker_1:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: autosullyworker.Dockerfile
     image: derpz-discord/autosully-worker:latest
     container_name: sully_worker_1
     restart: unless-stopped
@@ -41,13 +41,12 @@ services:
       - WORKER_NUMBER=1
     entrypoint: python sully_worker.py
     depends_on:
-      - bot_db
       - redis
 
   sully_worker_2:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: autosullyworker.Dockerfile
     image: derpz-discord/autosully-worker:latest
     container_name: sully_worker_2
     restart: unless-stopped
@@ -57,5 +56,138 @@ services:
       - WORKER_NUMBER=2
     entrypoint: python sully_worker.py
     depends_on:
-      - bot_db
+      - redis
+
+  sully_worker_6:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_6
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=6
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+
+  sully_worker_7:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_7
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=7
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+
+  sully_worker_8:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_8
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=8
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+
+  sully_worker_9:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_9
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=9
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+  sully_worker_10:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_10
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=10
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+
+  sully_worker_11:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_11
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=11
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+
+  sully_worker_12:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_12
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=12
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+
+  sully_worker_13:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_13
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=13
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+
+  sully_worker_14:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_14
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=14
+    entrypoint: python sully_worker.py
+    depends_on:
       - redis
