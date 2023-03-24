@@ -21,7 +21,6 @@ class BookBot(ConfigurableCogsBot):
             engine=engine,
             command_prefix=".",
             intents=disnake.Intents.all(),
-            reload=True,
             test_guilds=[1072179290671685753, 1073267404110561353],
         )
         # TODO: Make this configurable

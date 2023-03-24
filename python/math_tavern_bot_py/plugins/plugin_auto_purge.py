@@ -9,7 +9,8 @@ import disnake
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import DatabaseConfigurableCog
 from derpz_botlib.database.storage import CogConfiguration
-from derpz_botlib.utils import fmt_guild_channel_include_id
+from derpz_botlib.utils import (DiscordTimeFormat,
+                                fmt_guild_channel_include_id, fmt_time)
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands, tasks
 from disnake.ext.tasks import Loop
@@ -79,11 +80,13 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         """
         guild_config = self.get_guild_config(ctx.guild)
         next_purge_time = self._loops[ctx.channel.id].next_iteration.time()
-
+        next_purge_time_pretty = fmt_time(next_purge_time, DiscordTimeFormat.relative)
+        # TODO: Time info is broken
         if ctx.channel.id in guild_config.channel_purge_interval:
             await ctx.send(
                 f"This channel is set to purge messages every "
-                f"{guild_config.channel_purge_interval[ctx.channel.id]} seconds.",
+                f"{guild_config.channel_purge_interval[ctx.channel.id]} seconds."
+                f"This will occur at {next_purge_time_pretty}",
                 mention_author=True,
             )
         else:

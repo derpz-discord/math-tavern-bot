@@ -1,3 +1,5 @@
+import datetime
+import enum
 from typing import Union
 
 import disnake
@@ -28,7 +30,29 @@ async def reply_feature_wip(
     await ctx.reply("\N{CONSTRUCTION SIGN} This feature is still a work in progress!")
 
 
-def check_in_guild(ctx: Context):
-    if not ctx.guild:
-        raise CommandError("This command can only be used in a guild")
-    return True
+class DiscordTimeFormat(enum.Enum):
+    """
+    Discord time formats
+    See: https://r.3v.fi/discord-timestamps/
+    """
+
+    short_time = "t"
+    long_time = "T"
+    short_date = "d"
+    long_date = "D"
+    long_date_with_short_time = "f"
+    long_date_with_day_of_week_and_short_time = "F"
+    relative = "R"
+
+
+def fmt_time(dt: Union[datetime.datetime, datetime.time], tf: DiscordTimeFormat) -> str:
+    """Formats time for discord"""
+    # TODO: BROKEN AF
+    current_tz = datetime.datetime.now().tzinfo
+    if isinstance(dt, datetime.time):
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=datetime.datetime.now().tzinfo)
+        ts = datetime.datetime.combine(datetime.date.today(), dt)
+    else:
+        ts = dt
+    return "<t:{0}:{1}>".format(int(ts.utctimetuple()), tf.value)
