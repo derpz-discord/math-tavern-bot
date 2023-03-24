@@ -79,10 +79,13 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         Retrieves information about the auto-purge status of the channel
         """
         guild_config = self.get_guild_config(ctx.guild)
-        next_purge_time = self._loops[ctx.channel.id].next_iteration.time()
-        next_purge_time_pretty = fmt_time(next_purge_time, DiscordTimeFormat.relative)
-        # TODO: Time info is broken
+
         if ctx.channel.id in guild_config.channel_purge_interval:
+            next_purge_time = self._loops[ctx.channel.id].next_iteration.time()
+            next_purge_time_pretty = fmt_time(
+                next_purge_time, DiscordTimeFormat.relative
+            )
+            # TODO: Time info is broken
             await ctx.send(
                 f"This channel is set to purge messages every "
                 f"{guild_config.channel_purge_interval[ctx.channel.id]} seconds."

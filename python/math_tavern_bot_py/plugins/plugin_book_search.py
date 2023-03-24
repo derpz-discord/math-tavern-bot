@@ -1,3 +1,6 @@
+"""
+Search the OpenLibrary API for books.
+"""
 from __future__ import annotations
 
 import logging
