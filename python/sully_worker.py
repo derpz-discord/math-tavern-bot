@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from typing import Union
 
 import aioredis
 import async_timeout
@@ -25,7 +26,7 @@ class AutoSullyRequest(BaseModel):
     guild_id: int
     channel_id: int
     message_id: int
-    emoji_id: int
+    emoji_id: Union[int, str]
 
 
 async def reader(ps_channel: aioredis.client.PubSub):
@@ -53,11 +54,14 @@ async def reader(ps_channel: aioredis.client.PubSub):
                         continue
                     logging.info(f"(Reader) Message found: {message.content}")
                     # logging.info(guild.emojis)
-                    emoji = bot.get_emoji(msg.emoji_id)
-                    if emoji is None:
-                        logging.info(f"(Reader) Emoji not found: {msg.emoji_id}")
-                        continue
-                    # emoji = disnake.PartialEmoji(name="sully", id=emoji.id)
+                    if isinstance(msg.emoji_id, str):
+                        # we are working with a unicode emoji
+                        emoji = msg.emoji_id
+                    else:
+                        emoji = bot.get_emoji(msg.emoji_id)
+                        if emoji is None:
+                            logging.info(f"(Reader) Emoji not found: {msg.emoji_id}")
+                            continue
                     await message.add_reaction(emoji)
                     logging.info(f"(Reader) Reaction added: {emoji}")
                 await asyncio.sleep(0.01)

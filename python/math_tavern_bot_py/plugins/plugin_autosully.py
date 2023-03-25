@@ -6,7 +6,7 @@ This is useful for automatically reacting with a sully emoji to a user who
 sends a message that is cringe.
 """
 from os import getenv
-from typing import Optional
+from typing import Optional, Union
 
 import aioredis
 import disnake
@@ -27,7 +27,7 @@ class AutoSullyRequest(BaseModel):
     guild_id: int
     channel_id: int
     message_id: int
-    emoji_id: int
+    emoji_id: Union[int, str]
 
 
 class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
@@ -133,22 +133,26 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     async def mass_react(
         self,
         ctx: commands.Context,
-        emoji: disnake.Emoji
+        emoji: Union[str, disnake.Emoji]
     ):
-        if emoji.guild != ctx.guild:
-            await ctx.send("The emoji must be from this server")
-            return
         if ctx.message.reference is None:
             await ctx.send("You must reply to a message to mass react to it")
             return
+        if not isinstance(emoji, str):
+            # unicode emoji
+            if emoji.guild != ctx.guild:
+                await ctx.send("The emoji must be from this server")
+                return
         message = await ctx.fetch_message(ctx.message.reference.message_id)
         await message.add_reaction(emoji)
+        # TODO: Bad naming
+        emoji_id = emoji.id if isinstance(emoji, disnake.Emoji) else emoji
         await self.publish_sully_request(
             AutoSullyRequest(
                 guild_id=ctx.guild.id,
                 channel_id=message.channel.id,
                 message_id=message.id,
-                emoji_id=emoji.id,
+                emoji_id=emoji_id,
             )
         )
 
