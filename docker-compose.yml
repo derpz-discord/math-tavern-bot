@@ -58,6 +58,36 @@ services:
     depends_on:
       - redis
 
+  sully_worker_3:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_3
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=3
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+
+  sully_worker_4:
+    build:
+      context: .
+      dockerfile: autosullyworker.Dockerfile
+    image: derpz-discord/autosully-worker:latest
+    container_name: sully_worker_4
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - WORKER_NUMBER=4
+    entrypoint: python sully_worker.py
+    depends_on:
+      - redis
+
   sully_worker_6:
     build:
       context: .
