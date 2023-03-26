@@ -33,6 +33,84 @@ async def reply_feature_wip(
     await ctx.reply("\N{CONSTRUCTION SIGN} This feature is still a work in progress!")
 
 
+def parse_human_time(human_time: str) -> datetime.timedelta:
+    """
+    Parses a human time string into a timedelta
+
+    Examples:
+    1d2h3m4s
+    1d 2h 3m 4s
+    1day 2hour 3minute 4second
+    1day 2hours 3minutes 4seconds
+    1d 2hours 3minute 4s
+    1d 2h 3min 4sec
+
+    :throws ValueError: if the string is invalid
+    """
+    days, hours, minutes, seconds = 0, 0, 0, 0
+    # clean up the string first
+    human_time = human_time.lower().strip()
+    stack = []
+    for c in human_time:
+        if c.isdigit():
+            if stack and stack[-1].isdigit():
+                stack[-1] += c
+            else:
+                stack.append(c)
+        elif c.isalpha():
+            if stack and stack[-1].isalpha():
+                stack[-1] += c
+            else:
+                stack.append(c)
+        elif c.isspace():
+            # skip
+            pass
+        else:
+            raise ValueError("Invalid character in human time string")
+    # now parse the stack
+    # partition the stack into sets of 2
+    # the first element is the number, the second is the unit
+    partitions = [stack[i : i + 2] for i in range(0, len(stack), 2)]
+
+    # perform a quick check to make sure the partitions are valid
+    for i, partition in enumerate(partitions):
+        if len(partition) != 2:
+            raise ValueError(
+                "Invalid partition length at the {0}th partition: {1}".format(
+                    i, partition
+                )
+            )
+        if not partition[0].isdigit():
+            raise ValueError(
+                "First element of partition {0} is not a number: {1}".format(
+                    i, partition
+                )
+            )
+        if not partition[1].isalpha():
+            raise ValueError(
+                "Second element of partition {0} is not alphanumeric: {1}".format(
+                    i, partition
+                )
+            )
+
+    # now parse the partitions
+    for i, partition in enumerate(partitions):
+        number = int(partition[0])
+        unit = partition[1]
+        if unit in ("d", "day", "days"):
+            days = number
+        elif unit in ("h", "hour", "hours"):
+            hours = number
+        elif unit in ("m", "min", "minute", "minutes"):
+            minutes = number
+        elif unit in ("s", "sec", "second", "seconds"):
+            seconds = number
+        else:
+            raise ValueError("Invalid unit at partition {0}: {1}".format(i, unit))
+
+    return datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
+
 class DiscordTimeFormat(enum.Enum):
     """
     Discord time formats

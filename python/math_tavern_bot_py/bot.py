@@ -6,12 +6,6 @@ from disnake.ext import commands
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 
-# TODO:
-class BotHelp(commands.HelpCommand):
-    async def send_bot_help(self, mapping):
-        embed = disnake.Embed(title="Help")
-
-
 class BookBot(ConfigurableCogsBot):
     def __init__(self, db_url: str, oauth_client_id: str):
         engine = create_async_engine(db_url)
@@ -19,7 +13,7 @@ class BookBot(ConfigurableCogsBot):
             engine=engine,
             command_prefix=".",
             intents=disnake.Intents.all(),
-            test_guilds=[1072179290671685753, 1073267404110561353],
+            test_guilds=[1072179290671685753],
             owner_ids=[196556976866459648],
         )
 
@@ -51,7 +45,7 @@ class BookBot(ConfigurableCogsBot):
 
             self.engine_logger.info("Tables: %s", tables.fetchall())
 
-    @commands.command()
+    @commands.command(name="about")
     async def about(self, ctx: commands.Context):
         embed = disnake.Embed(title="About")
         embed.add_field(
@@ -69,11 +63,9 @@ class BookBot(ConfigurableCogsBot):
         self.logger.info("[bold yellow]Loading cogs[/bold yellow]")
         self.load_extension("math_tavern_bot_py.plugins.plugin_bot_admin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_pin")
-        # self.load_extension("math_tavern_bot_py.plugins.booklist.plugin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_autosully")
         self.load_extension("math_tavern_bot_py.plugins.plugin_moderation")
         self.load_extension("math_tavern_bot_py.plugins.plugin_goal_setting")
         self.load_extension("math_tavern_bot_py.plugins.plugin_auto_purge")
-
         self.load_extension("math_tavern_bot_py.plugins.plugin_tierlist")
         self.load_extension("math_tavern_bot_py.plugins.plugin_sticky_roles")

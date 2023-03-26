@@ -10,7 +10,8 @@ from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import DatabaseConfigurableCog
 from derpz_botlib.database.storage import CogConfiguration
 from derpz_botlib.utils import (DiscordTimeFormat,
-                                fmt_guild_channel_include_id, fmt_time)
+                                fmt_guild_channel_include_id,
+                                fmt_guild_include_id, fmt_time)
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands, tasks
 from disnake.ext.tasks import Loop
@@ -31,15 +32,28 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         """
         await super().cog_load()
         # iterate over config and register all channels
+
         for guild, config in self.config.items():
+            cleanup_list = []
             for channel_id, interval in config.channel_purge_interval.items():
                 channel = guild.get_channel(channel_id)
                 if channel is None:
                     self.logger.error(
                         "Channel %s not found in guild %s", channel_id, guild.id
                     )
+                    # remove it from the config
+                    cleanup_list.append(channel_id)
                     continue
                 self.register_channel_for_auto_purge(channel, interval)
+            # remove any invalid channels from the config
+            for ch in cleanup_list:
+                del config.channel_purge_interval[ch]
+            self.logger.info(
+                "Cleaning up %s invalid channels in %s",
+                len(cleanup_list),
+                fmt_guild_include_id(guild),
+            )
+            await self.save_guild_config(guild, config)
 
     def cog_unload(self):
         """
@@ -53,8 +67,6 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         """
         If a channel is deleted, we remove it from the auto purge list
         """
-        if channel not in self._loops:
-            return
         self.logger.info(
             "Channel %s deleted, removing from auto purge list",
             fmt_guild_channel_include_id(channel),
@@ -194,7 +206,8 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
 
     def unregister_channel_for_auto_purge(self, channel_id: int):
         loop = self._loops.pop(channel_id)
-        loop.cancel()
+        if loop:
+            loop.cancel()
 
     @staticmethod
     async def purge_channel(channel: disnake.TextChannel, include_pinned: bool = False):

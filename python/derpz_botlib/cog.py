@@ -1,11 +1,14 @@
 import typing
 
 import disnake
+import sqlalchemy
+from disnake.ext import commands
+from psycopg import DataError
+from sqlalchemy.exc import SQLAlchemyError
+
 from derpz_botlib.bot_classes import (ConfigurableCogsBot, DatabasedBot,
                                       LoggedBot)
 from derpz_botlib.database.storage import CogConfiguration
-from disnake.ext import commands
-from sqlalchemy import Connection
 
 T = typing.TypeVar("T", bound=CogConfiguration)
 
@@ -23,7 +26,9 @@ class LoggedCog(commands.Cog):
         self, inter: disnake.ApplicationCommandInteraction, error: Exception
     ) -> None:
         if isinstance(error, commands.BadArgument):
-            await inter.response.send_message(f"Input error: {error}", ephemeral=True)
+            await inter.response.send_message(
+                f"\N{CROSS MARK} Input error: `{error}`", ephemeral=True
+            )
             return
         self.logger.exception("Error in slash command", exc_info=error)
 
@@ -73,6 +78,20 @@ class DatabaseConfigurableCog(typing.Generic[T], LoggedCog):
         """
         self.config[guild] = config
         await self.bot.cog_config_store.set_cog_config(self, guild, self.config[guild])
+
+    async def cog_slash_command_error(
+        self, inter: disnake.ApplicationCommandInteraction, error: Exception
+    ) -> None:
+        if isinstance(error, DataError) or isinstance(error, SQLAlchemyError):
+            if await inter.original_response() is None:
+                await inter.response.send_message(
+                    f"\N{CROSS MARK} Internal server error", ephemeral=True
+                )
+            else:
+                await inter.edit_original_response(
+                    f"\N{CROSS MARK} Internal server error"
+                )
+        await super().cog_slash_command_error(inter, error)
 
     async def cog_load(self):
         """Load config from DB when cog is loaded"""

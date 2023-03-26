@@ -2,7 +2,8 @@ import datetime
 from typing import Annotated
 
 import sqlalchemy
-from sqlalchemy import TIMESTAMP, MetaData, func
+from sqlalchemy import MetaData, func
+from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.orm import DeclarativeBase, mapped_column
 
 sqlalchemy_metadata = MetaData()
@@ -18,7 +19,7 @@ tz_aware_timestamp = Annotated[
     mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
-        server_default=func.CURRENT_TIMESTAMP(),
+        server_default=func.now(),
     ),
 ]
 required_str = Annotated[str, mapped_column(nullable=False)]

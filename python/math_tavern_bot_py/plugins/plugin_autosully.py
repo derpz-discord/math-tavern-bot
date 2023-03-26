@@ -130,11 +130,7 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     @commands.command(description="Mass reacts to a message", name="massreact")
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
-    async def mass_react(
-        self,
-        ctx: commands.Context,
-        emoji: Union[str, disnake.Emoji]
-    ):
+    async def mass_react(self, ctx: commands.Context, emoji: Union[str, disnake.Emoji]):
         if ctx.message.reference is None:
             await ctx.send("You must reply to a message to mass react to it")
             return
