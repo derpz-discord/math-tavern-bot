@@ -146,7 +146,6 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         del guild_config.channel_purge_interval[channel.id]
         await self.save_guild_config(ctx.guild, guild_config)
         self.unregister_channel_for_auto_purge(channel.id)
-        await channel.edit(topic=None, reason="Auto purge interval removed")
         await ctx.send(
             f"Removed {channel.mention} from the list of channels to purge messages "
             f"at intervals."
@@ -173,11 +172,6 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         guild_config.channel_purge_interval[channel.id] = interval
         await self.save_guild_config(ctx.guild, guild_config)
         self.edit_purge_interval(channel, interval)
-        # TODO: What if someone changes the topic after this?
-        await channel.edit(
-            topic=f"Auto purge interval: {interval} seconds",
-            reason="Auto purge interval set",
-        )
         await ctx.send(
             f"Modified the interval at which {channel.mention} is purged to "
             f"{interval} seconds."
