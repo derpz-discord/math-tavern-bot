@@ -45,8 +45,8 @@ class BookBot(ConfigurableCogsBot):
 
             self.engine_logger.info("Tables: %s", tables.fetchall())
 
-    @commands.command(name="about")
-    async def about(self, ctx: commands.Context):
+    @commands.slash_command(description="Get information about the bot")
+    async def about(self, ctx: disnake.ApplicationCommandInteraction):
         embed = disnake.Embed(title="About")
         embed.add_field(
             name="Source", value="https://github.com/derpz-discord/math-tavern-bot"

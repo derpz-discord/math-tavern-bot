@@ -26,40 +26,9 @@ class BotAdminPlugin(commands.Cog):
     async def cog_load(self) -> None:
         self.logger.info("BotAdmin plugin loaded")
 
-    @commands.command(name="plugins")
-    @commands.is_owner()
-    async def plugin_list(self, ctx: commands.Context):
-        await ctx.send("Loaded Plugins: " + ", ".join(self.bot.cogs.keys()))
-
     @commands.slash_command(name="config")
     async def config(self, ctx: disnake.ApplicationCommandInteraction):
         pass
-
-    @config.sub_command()
-    @commands.is_owner()
-    async def load_plugin(
-        self,
-        ctx: disnake.ApplicationCommandInteraction,
-        plugin: str = commands.Param(description="The plugin to load"),
-    ):
-        if plugin in self.bot.cogs:
-            await ctx.send(f"Plugin {plugin} already loaded")
-        else:
-            self.bot.load_extension(f"math_tavern_bot_py.plugins.{plugin}")
-            await ctx.send(f"Loaded plugin {plugin}")
-
-    @config.sub_command()
-    @commands.is_owner()
-    async def unload_plugin(
-        self,
-        ctx: disnake.ApplicationCommandInteraction,
-        plugin: str = commands.Param(description="The plugin to unload"),
-    ):
-        if plugin in self.bot.cogs:
-            self.bot.remove_cog(plugin)
-            await ctx.send(f"Unloaded plugin {plugin}")
-        else:
-            await ctx.send(f"Plugin {plugin} not loaded")
 
     @commands.command(aliases=["sqlexec"])
     @commands.is_owner()
@@ -108,53 +77,6 @@ class BotAdminPlugin(commands.Cog):
         Send a raw message
         """
         await ctx.send(message)
-
-    @commands.slash_command(name="sudo_timeout")
-    @commands.is_owner()
-    async def sudo_timeout(
-        self,
-        ctx: disnake.ApplicationCommandInteraction,
-        *,
-        user: disnake.Member = commands.Param(description="The user to timeout"),
-        duration: int = commands.Param(
-            description="The duration of the timeout in seconds"
-        ),
-        reason: Optional[str] = commands.Param(
-            description="The reason for the timeout", default="Sudo timeout"
-        ),
-    ):
-        """
-        Timeout a user
-        """
-        human_readable_time = timedelta(seconds=duration)
-        await ctx.send(
-            f"Timeout {user} for {human_readable_time} seconds", ephemeral=True
-        )
-
-        await user.timeout(duration=human_readable_time, reason=reason)
-
-    @commands.slash_command(name="sudo_remove_timeout")
-    @commands.is_owner()
-    async def sudo_remove_timeout(
-        self,
-        ctx: disnake.ApplicationCommandInteraction,
-        *,
-        user: disnake.Member = commands.Param(
-            description="The user to remove the timeout from"
-        ),
-    ):
-        """
-        Remove a timeout from a user
-        """
-        expires_at = user.current_timeout
-        if expires_at is None:
-            await ctx.send(f"{user} is not timed out", ephemeral=True)
-            return
-        how_much_longer = expires_at - datetime.utcnow()
-        await ctx.send(
-            f"Remove timeout from {user} (Remains: {how_much_longer})", ephemeral=True
-        )
-        await user.remove_timeout()
 
     @commands.command(name="eval")
     @commands.is_owner()
