@@ -1,3 +1,5 @@
+from os import getenv
+
 import disnake
 import sqlalchemy
 from derpz_botlib.bot_classes import ConfigurableCogsBot
@@ -13,7 +15,7 @@ class BookBot(ConfigurableCogsBot):
             engine=engine,
             command_prefix=".",
             intents=disnake.Intents.all(),
-            test_guilds=[1072179290671685753],
+            test_guilds=[list(map(int, getenv("DEBUG_GUILDS").split(',')))],
             owner_ids=[196556976866459648],
         )
 
