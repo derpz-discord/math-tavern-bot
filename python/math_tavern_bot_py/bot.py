@@ -17,7 +17,7 @@ class BookBot(ConfigurableCogsBot):
             owner_ids=[196556976866459648],
         )
 
-        self._client_id = oauth_client_id
+        self.client_id = oauth_client_id
 
     async def on_ready(self):
         self.logger.info(f"We have logged in as [cyan]{self.user}[/cyan]")
@@ -45,23 +45,9 @@ class BookBot(ConfigurableCogsBot):
 
             self.engine_logger.info("Tables: %s", tables.fetchall())
 
-    @commands.slash_command(description="Get information about the bot")
-    async def about(self, ctx: disnake.ApplicationCommandInteraction):
-        embed = disnake.Embed(title="About")
-        embed.add_field(
-            name="Source", value="https://github.com/derpz-discord/math-tavern-bot"
-        )
-        embed.add_field(
-            name="Invite",
-            value=disnake.utils.oauth_url(
-                self._client_id, permissions=disnake.Permissions.administrator()
-            ),
-        )
-
     def load_cogs(self):
         # TODO: Dynamic load and unload
         self.logger.info("[bold yellow]Loading cogs[/bold yellow]")
-        self.load_extension("math_tavern_bot_py.plugins.plugin_bot_admin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_pin")
         self.load_extension("math_tavern_bot_py.plugins.plugin_autosully")
         self.load_extension("math_tavern_bot_py.plugins.plugin_moderation")
