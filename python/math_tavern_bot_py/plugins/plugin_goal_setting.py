@@ -20,19 +20,20 @@ from typing import Optional, Sequence
 
 import disnake
 import sqlalchemy.exc
-from sqlalchemy import select
-
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import DatabaseConfigurableCog
-from derpz_botlib.database.db import (SqlAlchemyBase, intpk, required_int,
-                                      required_str, tz_aware_timestamp, required_bigint)
+from derpz_botlib.database.db import (SqlAlchemyBase, intpk, required_bigint,
+                                      required_int, required_str,
+                                      tz_aware_timestamp)
 from derpz_botlib.database.storage import CogConfiguration
 from derpz_botlib.discord_utils.view import (DatePickerView,
                                              MessageAndBotAwareView)
-from derpz_botlib.utils import parse_human_time, reply_feature_wip
+from derpz_botlib.utils import (DiscordTimeFormat, fmt_time, parse_human_time,
+                                reply_feature_wip)
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
-from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import Mapped
 
 
@@ -55,7 +56,7 @@ class GoalManager:
         self.engine = engine
 
     async def create_goal(
-            self, user_id: int, goal_name: str, goal_description: str, end_dt: datetime
+        self, user_id: int, goal_name: str, goal_description: str, end_dt: datetime
     ):
         async with AsyncSession(self.engine, expire_on_commit=False) as session:
             goal = Goal(
@@ -120,12 +121,11 @@ class GoalSettingPlugin(DatabaseConfigurableCog[GoalSettingPluginConfig]):
 
     @cmd_goal.sub_command(description="Creates a goal")
     async def create(
-            self,
-            ctx: ApplicationCommandInteraction,
-            name: str = commands.Param(description="The name of the goal"),
-            description: str = commands.Param(
-                description="The description of the goal"),
-            end_in: str = commands.Param(description="The end time delta of the goal"),
+        self,
+        ctx: ApplicationCommandInteraction,
+        name: str = commands.Param(description="The name of the goal"),
+        description: str = commands.Param(description="The description of the goal"),
+        end_in: str = commands.Param(description="The end time delta of the goal"),
     ):
         try:
             parse_human_time(end_in)
@@ -144,13 +144,17 @@ class GoalSettingPlugin(DatabaseConfigurableCog[GoalSettingPluginConfig]):
     @cmd_goal.sub_command(description="See what goals you have currently set")
     async def list(self, ctx: ApplicationCommandInteraction):
         goals = await GoalManager(self.bot.engine).get_goals(ctx.author.id)
+        if not goals:
+            await ctx.send("You don't have any goals set!")
+            return
+        goals_formatted = map(
+            lambda goal: f"- {goal.id}: {goal.goal_name} - {goal.goal_description} - {fmt_time(goal.end_dt, DiscordTimeFormat.relative)}",
+            goals,
+        )
         await ctx.send(
             embed=disnake.Embed(
                 title="Your Goals",
-                description="\n".join(
-                    f"{goal.id}: {goal.goal_name} - {goal.goal_description}"
-                    for goal in goals
-                ),
+                description="\n".join(goals_formatted),
             )
         )
 
@@ -165,12 +169,12 @@ class GoalSettingPlugin(DatabaseConfigurableCog[GoalSettingPluginConfig]):
     @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
     async def set_study_role(
-            self,
-            ctx: ApplicationCommandInteraction,
-            *,
-            role: disnake.Role = commands.Param(
-                description="The role to set as the study role"
-            ),
+        self,
+        ctx: ApplicationCommandInteraction,
+        *,
+        role: disnake.Role = commands.Param(
+            description="The role to set as the study role"
+        ),
     ):
         guild_config = self.get_guild_config(ctx.guild)
         guild_config.study_role = role.id
@@ -184,8 +188,8 @@ class GoalSettingPlugin(DatabaseConfigurableCog[GoalSettingPluginConfig]):
     @commands.has_permissions(manage_roles=True)
     @commands.guild_only()
     async def dump_config(
-            self,
-            ctx: ApplicationCommandInteraction,
+        self,
+        ctx: ApplicationCommandInteraction,
     ):
         guild_config = self.get_guild_config(ctx.guild)
         await ctx.send(embed=guild_config.to_embed())

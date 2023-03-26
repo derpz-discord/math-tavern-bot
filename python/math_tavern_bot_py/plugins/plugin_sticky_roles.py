@@ -12,7 +12,7 @@ from derpz_botlib.utils import (fmt_guild_include_id, fmt_user,
                                 fmt_user_include_id)
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
-from sqlalchemy.ext.asyncio import AsyncSession, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -91,8 +91,9 @@ class UserRoleCacheManager:
             rows = result.scalars().all()
             return rows
 
-    async def get_member(self, member_id: int, server_id: int) -> Optional[
-        UserRoleCache]:
+    async def get_member(
+        self, member_id: int, server_id: int
+    ) -> Optional[UserRoleCache]:
         with AsyncSession(self.engine) as sess:
             stmt = (
                 sqlalchemy.select(UserRoleCache)

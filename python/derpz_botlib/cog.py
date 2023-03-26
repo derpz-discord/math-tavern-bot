@@ -2,13 +2,12 @@ import typing
 
 import disnake
 import sqlalchemy
-from disnake.ext import commands
-from psycopg import DataError
-from sqlalchemy.exc import SQLAlchemyError
-
 from derpz_botlib.bot_classes import (ConfigurableCogsBot, DatabasedBot,
                                       LoggedBot)
 from derpz_botlib.database.storage import CogConfiguration
+from disnake.ext import commands
+from psycopg import DataError
+from sqlalchemy.exc import SQLAlchemyError
 
 T = typing.TypeVar("T", bound=CogConfiguration)
 

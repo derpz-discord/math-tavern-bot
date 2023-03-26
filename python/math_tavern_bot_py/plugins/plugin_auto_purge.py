@@ -93,15 +93,20 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         guild_config = self.get_guild_config(ctx.guild)
 
         if ctx.channel.id in guild_config.channel_purge_interval:
-            next_purge_time = self._loops[ctx.channel.id].next_iteration.time()
-            next_purge_time_pretty = fmt_time(
-                next_purge_time, DiscordTimeFormat.relative
-            )
-            # TODO: Time info is broken
+            loop = self._loops.get(ctx.channel.id)
+            if loop is None:
+                # TODO: Handle
+                await ctx.send("Error occured, contact dev")
+                return
+            next_run = loop.next_iteration
+            if next_run is not None:
+                next_run = fmt_time(next_run, DiscordTimeFormat.relative)
+            else:
+                next_run = "idk"
             await ctx.send(
                 f"This channel is set to purge messages every "
                 f"{guild_config.channel_purge_interval[ctx.channel.id]} seconds."
-                f"This will occur at {next_purge_time_pretty}",
+                f"This will occur at {next_run}",
                 mention_author=True,
             )
         else:
@@ -200,7 +205,9 @@ class AutoPurgePlugin(DatabaseConfigurableCog[AutoPurgeConfig]):
         self._loops[channel.id] = loop
 
     def edit_purge_interval(self, channel: disnake.TextChannel, interval: int):
-        loop = self._loops[channel.id]
+        loop = self._loops.get(channel.id)
+        if loop is None:
+            raise ValueError("Channel is not registered for auto purge")
         loop.change_interval(seconds=interval)
         self._loops[channel.id] = loop
 

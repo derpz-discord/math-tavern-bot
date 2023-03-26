@@ -126,14 +126,13 @@ class DiscordTimeFormat(enum.Enum):
     relative = "R"
 
 
-def fmt_time(dt: Union[datetime.datetime, datetime.time], tf: DiscordTimeFormat) -> str:
-    """Formats time for discord"""
-    # TODO: BROKEN AF
-    current_tz = datetime.datetime.now().tzinfo
-    if isinstance(dt, datetime.time):
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=datetime.datetime.now().tzinfo)
-        ts = datetime.datetime.combine(datetime.date.today(), dt)
-    else:
-        ts = dt
-    return "<t:{0}:{1}>".format(int(ts.utctimetuple()), tf.value)
+def fmt_time(dt: datetime.datetime, tf: DiscordTimeFormat) -> str:
+    """
+    Formats time for discord
+    If the datetime does not have a timezone, it will be assumed to be in
+    local time and converted to UTC
+    """
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.datetime.now().tzinfo)
+
+    return "<t:{0}:{1}>".format(int(dt.timestamp()), tf.value)
