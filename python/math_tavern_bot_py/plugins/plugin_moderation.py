@@ -2,7 +2,7 @@ import disnake
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import DatabaseConfigurableCog
 from derpz_botlib.database.storage import CogConfiguration
-from derpz_botlib.utils import fmt_user_include_id
+from derpz_botlib.utils import fmt_user_include_id, parse_human_time
 from disnake import AllowedMentions, ApplicationCommandInteraction
 from disnake.ext import commands
 
@@ -149,6 +149,35 @@ class ModerationPlugin(DatabaseConfigurableCog[ModerationPluginConfig]):
         await ctx.send(
             f"Added {role.mention} to {user.mention}",
             allowed_mentions=AllowedMentions.none(),
+        )
+
+    @moderation.sub_command(description="Times out a user for a given duration")
+    @commands.has_permissions(manage_roles=True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def timeout(
+        self,
+        ctx: ApplicationCommandInteraction,
+        *,
+        user: disnake.Member,
+        duration: str = commands.Param(
+            description="The duration of the timeout",
+            default="5m",
+        ),
+    ):
+        parsed_time = parse_human_time(duration)
+        if parsed_time is None:
+            await ctx.send(
+                f"Could not parse time {duration}",
+            )
+            return
+        await ctx.send(
+            "Timing out {user.mention} for {duration}",
+            allowed_mentions=AllowedMentions.none(),
+        )
+        await user.timeout(
+            duration=parsed_time,
+            reason=f"Requested by {fmt_user_include_id(ctx.author)}",
         )
 
 

@@ -1,11 +1,10 @@
 from typing import Optional
 
 import disnake
-from disnake.ext import commands
-
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import DatabaseConfigurableCog
 from derpz_botlib.database.storage import CogConfiguration
+from disnake.ext import commands
 
 
 class HelpForumConfiguration(CogConfiguration):
@@ -13,7 +12,6 @@ class HelpForumConfiguration(CogConfiguration):
 
 
 class HelpForumPlugin(DatabaseConfigurableCog[HelpForumConfiguration]):
-
     def __init__(self, bot: ConfigurableCogsBot):
         super().__init__(bot, HelpForumConfiguration)
 

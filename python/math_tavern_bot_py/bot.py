@@ -15,7 +15,7 @@ class BookBot(ConfigurableCogsBot):
             engine=engine,
             command_prefix=".",
             intents=disnake.Intents.all(),
-            test_guilds=list(map(int, getenv("DEBUG_GUILDS").split(','))),
+            test_guilds=list(map(int, getenv("DEBUG_GUILDS").split(","))),
             owner_ids=[196556976866459648],
         )
 
