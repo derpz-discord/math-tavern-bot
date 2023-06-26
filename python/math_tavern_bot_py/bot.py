@@ -1,3 +1,5 @@
+import pkgutil
+from collections import deque
 from os import getenv
 
 import disnake
@@ -48,12 +50,9 @@ class BookBot(ConfigurableCogsBot):
             self.engine_logger.info("Tables: %s", tables.fetchall())
 
     def load_cogs(self):
-        # TODO: Dynamic load and unload
         self.logger.info("[bold yellow]Loading cogs[/bold yellow]")
-        self.load_extension("math_tavern_bot_py.plugins.plugin_pin")
-        self.load_extension("math_tavern_bot_py.plugins.plugin_autosully")
-        self.load_extension("math_tavern_bot_py.plugins.plugin_moderation")
-        self.load_extension("math_tavern_bot_py.plugins.plugin_goal_setting")
-        self.load_extension("math_tavern_bot_py.plugins.plugin_auto_purge")
-        self.load_extension("math_tavern_bot_py.plugins.plugin_tierlist")
-        self.load_extension("math_tavern_bot_py.plugins.plugin_sticky_roles")
+        extension_list = list(map(lambda x: x.name, pkgutil.iter_modules(["math_tavern_bot_py/plugins"])))
+        do_not_load = getenv("DISABLED_PLUGINS").split(",")
+        to_load = list(filter(lambda x: x not in do_not_load, extension_list))
+
+        deque(map(self.load_extension, map(lambda x: f"math_tavern_bot_py.plugins.{x}", to_load)))
