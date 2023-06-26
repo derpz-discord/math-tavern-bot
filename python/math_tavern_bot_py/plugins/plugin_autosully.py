@@ -10,13 +10,12 @@ from typing import Optional, Union
 
 import aioredis
 import disnake
-from disnake.ext.commands import MissingRole, CheckFailure
-
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
 from derpz_botlib.utils import fmt_user
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
+from disnake.ext.commands import CheckFailure, MissingRole
 from pydantic import BaseModel
 
 

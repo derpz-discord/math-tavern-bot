@@ -10,7 +10,7 @@ from disnake.ext import commands
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 
-class BookBot(ConfigurableCogsBot):
+class TavernBot(ConfigurableCogsBot):
     def __init__(self, db_url: str, oauth_client_id: str):
         engine = create_async_engine(db_url)
         super().__init__(
@@ -51,8 +51,15 @@ class BookBot(ConfigurableCogsBot):
 
     def load_cogs(self):
         self.logger.info("[bold yellow]Loading cogs[/bold yellow]")
-        extension_list = list(map(lambda x: x.name, pkgutil.iter_modules(["math_tavern_bot_py/plugins"])))
+        extension_list = list(
+            map(lambda x: x.name, pkgutil.iter_modules(["math_tavern_bot_py/plugins"]))
+        )
         do_not_load = getenv("DISABLED_PLUGINS").split(",")
         to_load = list(filter(lambda x: x not in do_not_load, extension_list))
 
-        deque(map(self.load_extension, map(lambda x: f"math_tavern_bot_py.plugins.{x}", to_load)))
+        deque(
+            map(
+                self.load_extension,
+                map(lambda x: f"math_tavern_bot_py.plugins.{x}", to_load),
+            )
+        )

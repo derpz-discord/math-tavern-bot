@@ -36,6 +36,5 @@ class PollPlugin(LoggedCog):
         await msg.add_reaction("\N{THUMBS DOWN SIGN}")
 
 
-
 def setup(bot: LoggedBot):
     bot.add_cog(PollPlugin(bot))
