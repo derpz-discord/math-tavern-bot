@@ -172,7 +172,7 @@ class ModerationPlugin(DatabaseConfigurableCog[ModerationPluginConfig]):
             )
             return
         await ctx.send(
-            "Timing out {user.mention} for {duration}",
+            f"Timing out {user.mention} for {duration}",
             allowed_mentions=AllowedMentions.none(),
         )
         await user.timeout(
