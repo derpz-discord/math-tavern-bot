@@ -14,10 +14,8 @@ RUN poetry config virtualenvs.create false
 COPY poetry.lock pyproject.toml /app/
 WORKDIR /app
 
-RUN poetry install --no-dev --no-interaction --no-ansi
-
 COPY . /app
-
+RUN poetry install --no-dev --no-interaction --no-ansi
 
 WORKDIR /app/python
 ENV PYTHONPATH="/app:/app/python"
