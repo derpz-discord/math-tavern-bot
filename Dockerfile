@@ -20,7 +20,7 @@ COPY . /app
 
 
 WORKDIR /app/python
-ENV PYTHONPATH="."
+ENV PYTHONPATH="$PYTHONPATH:/app:/app/python"
 ENTRYPOINT ["python", "main.py"]
 
 
