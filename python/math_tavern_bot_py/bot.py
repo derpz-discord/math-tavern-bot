@@ -4,10 +4,10 @@ from os import getenv
 
 import disnake
 import sqlalchemy
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.database.db import SqlAlchemyBase
-from disnake.ext import commands
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 
 class TavernBot(ConfigurableCogsBot):
@@ -27,7 +27,7 @@ class TavernBot(ConfigurableCogsBot):
         self.logger.info(f"We have logged in as [cyan]{self.user}[/cyan]")
         self.logger.info(f"We are in {len(self.guilds)} servers")
 
-        self.load_cogs()
+        self.load_all_extensions()
         await self.change_presence(activity=disnake.Game(name="bot ready"))
 
     async def _init_db(self):
@@ -49,7 +49,19 @@ class TavernBot(ConfigurableCogsBot):
 
             self.engine_logger.info("Tables: %s", tables.fetchall())
 
-    def load_cogs(self):
+    def unload_all_extensions(self):
+        self.logger.info("[bold yellow]Unloading cogs[/bold yellow]")
+        deque(map(self.unload_extension, self.extensions))
+
+    def reload_all_extensions(self):
+        self.logger.info("[bold yellow]Reloading cogs[/bold yellow]")
+        self.unload_all_extensions()
+        self.load_all_extensions()
+
+    def load_all_extensions(self):
+        """
+        Load all extensions in math_tavern_bot_py.plugins
+        """
         self.logger.info("[bold yellow]Loading cogs[/bold yellow]")
         extension_list = list(
             map(lambda x: x.name, pkgutil.iter_modules(["math_tavern_bot_py/plugins"]))
