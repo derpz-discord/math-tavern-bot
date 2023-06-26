@@ -10,6 +10,8 @@ from typing import Optional, Union
 
 import aioredis
 import disnake
+from disnake.ext.commands import MissingRole, CheckFailure
+
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.cog import CogConfiguration, DatabaseConfigurableCog
 from derpz_botlib.utils import fmt_user
@@ -21,6 +23,7 @@ from pydantic import BaseModel
 class AutoSullyConfig(CogConfiguration):
     sully_emoji: Optional[int] = None
     sully_users: set[int] = set()
+    roles_allowed_to_setup_autosully: set[int] = set()
 
 
 class AutoSullyRequest(BaseModel):
@@ -67,20 +70,69 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         await self.save_guild_config(ctx.guild, guild_config)
         await ctx.send(f"Set sully emoji to {emoji}")
 
+    @cmd_auto_sully.sub_command_group()
+    async def plugin_config(self, ctx: disnake.ApplicationCommandInteraction):
+        pass
+
+    @plugin_config.sub_command(
+        description="Add a role that is allowed to setup autosully"
+    )
+    @commands.has_permissions(manage_roles=True)
+    @commands.guild_only()
+    async def add_allowed_role(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        role: disnake.Role = commands.Param(),
+    ):
+        guild_config = self.get_guild_config(ctx.guild)
+        guild_config.roles_allowed_to_setup_autosully.add(role.id)
+        await self.save_guild_config(ctx.guild, guild_config)
+        await ctx.send(
+            f"Added {role.mention} to allowed roles",
+            ephemeral=True,
+            allowed_mentions=disnake.AllowedMentions.none(),
+        )
+
+    @plugin_config.sub_command(
+        descripotion="Remove a role that is allowed to setup autosully"
+    )
+    @commands.has_permissions(manage_roles=True)
+    @commands.guild_only()
+    async def remove_allowed_role(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        role: disnake.Role = commands.Param(),
+    ):
+        guild_config = self.get_guild_config(ctx.guild)
+        guild_config.roles_allowed_to_setup_autosully.remove(role.id)
+        await self.save_guild_config(ctx.guild, guild_config)
+        await ctx.send(
+            f"Removed {role.mention} from allowed roles",
+            ephemeral=True,
+            allowed_mentions=disnake.AllowedMentions.none(),
+        )
+
     @cmd_auto_sully.sub_command(description="Marks a user for automatic sullies")
-    @commands.has_permissions(manage_messages=True)
     @commands.guild_only()
     async def sully_user(
         self,
         ctx: disnake.ApplicationCommandInteraction,
-        user: disnake.User = commands.Param(description="The user to sully"),
+        user: disnake.Member = commands.Param(description="The user to sully"),
     ):
+        guild_config = self.get_guild_config(ctx.guild)
+        allowed_sully_roles = guild_config.roles_allowed_to_setup_autosully
         if user.id == self.bot.user.id:
             await ctx.send("I'm not going to sully myself")
             return
         if user.id in self.bot.owner_ids or user.id == self.bot.owner_id:
             await ctx.send("I'm not going to sully my owners")
             return
+        if (
+            set(ctx.user.roles).intersection(allowed_sully_roles) == set()
+            and not ctx.user.guild_permissions.manage_roles
+        ):
+            await ctx.send("You do not have a required role to use this")
+            raise CheckFailure()
         guild_config = self.config.get(ctx.guild, AutoSullyConfig())
         guild_config.sully_users.add(user.id)
         self.config[ctx.guild] = guild_config
@@ -90,13 +142,20 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     @cmd_auto_sully.sub_command(
         description="Removes a user from the automatic sully list"
     )
-    @commands.has_permissions(manage_messages=True)
+    @commands.guild_only()
     async def stop_sullying_user(
         self,
         ctx: disnake.ApplicationCommandInteraction,
-        user: disnake.User = commands.Param(description="The user to stop sullying"),
+        user: disnake.Member = commands.Param(description="The user to stop sullying"),
     ):
-        guild_config = self.config.get(ctx.guild, AutoSullyConfig())
+        guild_config = self.get_guild_config(ctx.guild)
+        allowed_sully_roles = guild_config.roles_allowed_to_setup_autosully
+        if (
+            set(ctx.user.roles).intersection(allowed_sully_roles) == set()
+            and not ctx.user.guild_permissions.manage_roles
+        ):
+            await ctx.send("You do not have a required role to use this")
+            raise CheckFailure()
         guild_config.sully_users.discard(user.id)
         self.config[ctx.guild] = guild_config
         await self.bot.cog_config_store.set_cog_config(self, ctx.guild, guild_config)
@@ -109,7 +168,7 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         :param ctx: The context of the command
         :return: None
         """
-        guild_config = self.config.get(ctx.guild, AutoSullyConfig())
+        guild_config = self.get_guild_config(ctx.guild)
         if guild_config.sully_users:
             sullied_users = []
             # TODO: Cache
@@ -129,16 +188,24 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
 
     @commands.command(description="Mass reacts to a message", name="massreact")
     @commands.guild_only()
-    @commands.has_permissions(manage_messages=True)
     async def mass_react(self, ctx: commands.Context, emoji: Union[str, disnake.Emoji]):
+        guild_config = self.get_guild_config(ctx.guild)
+        if (
+            set(ctx.author.roles).intersection(
+                guild_config.roles_allowed_to_setup_autosully
+            )
+            == set()
+        ):
+            await ctx.send("You do not have a required role to use this")
+            raise CheckFailure()
         if ctx.message.reference is None:
             await ctx.send("You must reply to a message to mass react to it")
-            return
+            raise CheckFailure()
         if not isinstance(emoji, str):
             # unicode emoji
             if emoji.guild != ctx.guild:
                 await ctx.send("The emoji must be from this server")
-                return
+                raise commands.EmojiNotFound(argument=str(emoji))
         message = await ctx.fetch_message(ctx.message.reference.message_id)
         await message.add_reaction(emoji)
         # TODO: Bad naming
@@ -153,10 +220,10 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         )
 
     @commands.Cog.listener()
-    async def on_message(self, message: disnake.Message):
+    async def on_message(self, ctx: commands.Context, message: disnake.Message):
         if not message.guild:
             return
-        guild_config = self.config.get(message.guild, AutoSullyConfig())
+        guild_config = self.get_guild_config(ctx.guild)
         if message.author.id in guild_config.sully_users:
             if guild_config.sully_emoji is not None:
                 emoji = await message.guild.fetch_emoji(guild_config.sully_emoji)
@@ -176,6 +243,16 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
             )
             return
         await super().cog_slash_command_error(inter, error)
+
+    async def cog_message_command_error(
+        self, inter: ApplicationCommandInteraction, error: Exception
+    ) -> None:
+        if isinstance(error, commands.EmojiNotFound):
+            await inter.response.send_message(
+                "The emoji you specified is not from this server"
+            )
+            return
+        await super().cog_message_command_error(inter, error)
 
 
 def setup(bot: ConfigurableCogsBot):
