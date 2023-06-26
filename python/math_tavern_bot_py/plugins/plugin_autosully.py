@@ -219,10 +219,10 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         )
 
     @commands.Cog.listener()
-    async def on_message(self, ctx: commands.Context, message: disnake.Message):
+    async def on_message(self, message: disnake.Message):
         if not message.guild:
             return
-        guild_config = self.get_guild_config(ctx.guild)
+        guild_config = self.get_guild_config(message.guild)
         if message.author.id in guild_config.sully_users:
             if guild_config.sully_emoji is not None:
                 emoji = await message.guild.fetch_emoji(guild_config.sully_emoji)
