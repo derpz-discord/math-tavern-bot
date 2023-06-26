@@ -3,23 +3,21 @@ FROM python:3.10-buster
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     postgresql-client \
-    postgresql-client-common \
-    python3-pip
+    postgresql-client-common
 
 
-
-RUN pip install poetry==1.4.1
+RUN pip3 install poetry==1.4.1
 RUN poetry config virtualenvs.create false
 
-COPY poetry.lock pyproject.toml /app/
 WORKDIR /app
 
-COPY . /app
+COPY poetry.lock pyproject.toml /app/
+
 RUN poetry install --no-dev --no-interaction --no-ansi
 
+COPY . /app
+
+ENV PYTHONPATH="/app:/app/python:/app/python/math_tavern_bot_py"
+
 WORKDIR /app/python
-ENV PYTHONPATH="/app:/app/python"
 ENTRYPOINT ["python", "main.py"]
-
-
-
