@@ -13,5 +13,4 @@ if __name__ == "__main__":
     if not discord_token:
         raise ValueError("No DISCORD_TOKEN found in environment variables.")
     bot = TavernBot(db_url=db_url, oauth_client_id=client_id)
-    print(getenv("PYTHONPATH"))
     bot.run(discord_token)
