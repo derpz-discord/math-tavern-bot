@@ -26,10 +26,15 @@ class BotInfoPlugin(LoggedCog):
         """
         Checks the bot's latency to the discord API
         """
-        await ctx.send(f"Pong! {round(self.bot.latency * 1000)}ms")
+        await ctx.send(
+            f"Pong! Latency to discord API is: **{round(self.bot.latency * 1000)}ms**"
+        )
 
     @commands.command(name="about")
     async def about_command(self, ctx: commands.Context):
+        """
+        Shows information about the bot such as the version and git hash
+        """
         version = pkg_resources.get_distribution("math-tavern-bot").version
         git_hash = get_git_revision_short_hash()
         await ctx.send(f"Math Tavern Bot v**{version}**\n" f"Git: {git_hash}")
@@ -41,12 +46,15 @@ class BotInfoPlugin(LoggedCog):
         )
 
     @commands.command(name="reload")
+    @commands.is_owner()
     async def reload_command(self, ctx: commands.Context):
         """
-        Reloads all the extensions currently loaded
+        Reloads all the extensions currently loaded.
+        Currently, disabled due to issues
         """
-        self.bot.reload_all_extensions()
-        await ctx.send("Reloaded cogs")
+        await ctx.send("This command is currently disabled")
+        # self.bot.reload_all_extensions()
+        # await ctx.send("Reloaded cogs")
 
 
 def setup(bot: TavernBot):
