@@ -206,10 +206,10 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     async def mass_react(self, ctx: commands.Context, emoji: Union[str, disnake.Emoji]):
         guild_config = self.get_guild_config(ctx.guild)
         if (
-            set(map(lambda r: r.id, ctx.user.roles)).intersection(
+            set(map(lambda r: r.id, ctx.author.roles)).intersection(
                 guild_config.roles_allowed_to_setup_autosully
             )
-            == set() and not ctx.user.guild_permissions.manage_roles
+            == set() and not ctx.author.guild_permissions.manage_roles
         ):
             await ctx.send("You do not have a required role to use this")
             raise CheckFailure()
