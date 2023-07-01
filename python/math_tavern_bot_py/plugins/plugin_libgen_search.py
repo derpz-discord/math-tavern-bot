@@ -84,6 +84,7 @@ class PluginLibgenSearch(LoggedCog):
         )
         paginator = Menu(embeds)
         await ctx.send(
+            embed=embeds[0],
             view=paginator,
         )
 
