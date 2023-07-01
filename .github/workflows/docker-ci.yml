@@ -6,6 +6,8 @@ on:
       - 'master'
     tags:
       - v*
+env:
+  IMAGE_NAME: math-tavern-bot
 
 jobs:
   docker:
@@ -16,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Build
-        run: docker build . --file Dockerfile --tag math-tavern-bot --label "runnumber=${GITHUB_RUN_ID}"
+        run: docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
       - name: Push image
