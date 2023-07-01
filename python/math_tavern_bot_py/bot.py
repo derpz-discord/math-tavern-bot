@@ -1,6 +1,7 @@
 import pkgutil
 from collections import deque
 from os import getenv
+from typing import Any
 
 import disnake
 import sqlalchemy
@@ -47,6 +48,14 @@ class TavernBot(ConfigurableCogsBot):
             )
 
             self.engine_logger.info("Tables: %s", tables.fetchall())
+
+    async def on_error(self, event_method: str, *args: Any, **kwargs: Any) -> None:
+        # dm me on discord if there's an error
+        await self.get_user(self.owner_id).send(
+            f":octagonal_sign: Error in `{event_method}`:"
+            f"```{args}```\n"
+            f"```{kwargs}```\n"
+        )
 
     def unload_all_extensions(self):
         self.logger.info("[bold yellow]Unloading cogs[/bold yellow]")
