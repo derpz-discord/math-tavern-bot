@@ -1,6 +1,8 @@
 """
 Plugin for searching Libgen for books.
 """
+from collections import deque
+
 import disnake
 from derpz_botlib.bot_classes import LoggedBot
 from derpz_botlib.cog import LoggedCog
@@ -8,6 +10,50 @@ from derpz_botlib.discord_utils.paginator import Menu
 from disnake import ApplicationCommandInteraction
 from disnake.ext import commands
 from libgen_api import LibgenSearch
+
+
+def extract_all_mirrors(lg_item: dict) -> list[str]:
+    """
+    Extracts all the mirrors from a libgen item
+
+    References:
+        https://github.com/harrison-broadbent/libgen-api#results-layout
+    """
+    return list(
+        map(
+            lambda k: lg_item[k],
+            filter(lambda k: k.startswith("Mirror_"), lg_item.keys()),
+        )
+    )
+
+
+def make_embed(lg_item: dict) -> disnake.Embed:
+    """
+    Formats libgen return items nicely
+
+    Args:
+        lg_item: See above
+    Returns:
+        Nice embed
+    """
+    embed = disnake.Embed(
+        title=lg_item["Title"],
+        description=f"Author: {lg_item['Author']}\n"
+        f"Year: {lg_item['Year']}\n"
+        f"Pages: {lg_item['Pages']}\n"
+        f"Size: {lg_item['Size']}\n"
+        f"Extension: {lg_item['Extension']}\n",
+    )
+    mirrors = extract_all_mirrors(lg_item)
+    deque(
+        map(
+            lambda i_m: embed.add_field(
+                name=f"Mirror #{i_m[0]+1}", value=i_m[1], inline=False
+            ),
+            enumerate(mirrors),
+        )
+    )
+    return embed
 
 
 class PluginLibgenSearch(LoggedCog):
@@ -32,15 +78,7 @@ class PluginLibgenSearch(LoggedCog):
             return
         embeds = list(
             map(
-                lambda r: disnake.Embed(
-                    title=r["Title"],
-                    description=f"Author: {r['Author']}\n"
-                    f"Year: {r['Year']}\n"
-                    f"Pages: {r['Pages']}\n"
-                    f"Size: {r['Size']}\n"
-                    f"Extension: {r['Extension']}\n"
-                    f"Mirror: {r['Mirror_1']}",
-                ),
+                make_embed,
                 results,
             )
         )
