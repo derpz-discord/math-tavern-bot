@@ -120,7 +120,10 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         ctx: disnake.ApplicationCommandInteraction,
     ):
         guild_config = self.get_guild_config(ctx.guild)
-        roles = [ctx.guild.get_role(role_id) for role_id in guild_config.roles_allowed_to_setup_autosully]
+        roles = [
+            ctx.guild.get_role(role_id)
+            for role_id in guild_config.roles_allowed_to_setup_autosully
+        ]
         await ctx.send(
             "\n".join([role.mention for role in roles]),
             ephemeral=True,
@@ -143,7 +146,8 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
             await ctx.send("I'm not going to sully my owners")
             return
         if (
-            set(map(lambda r: r.id, ctx.user.roles)).intersection(allowed_sully_roles) == set()
+            set(map(lambda r: r.id, ctx.user.roles)).intersection(allowed_sully_roles)
+            == set()
             and not ctx.user.guild_permissions.manage_roles
         ):
             await ctx.send("You do not have a required role to use this")
@@ -166,7 +170,8 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         guild_config = self.get_guild_config(ctx.guild)
         allowed_sully_roles = guild_config.roles_allowed_to_setup_autosully
         if (
-            set(map(lambda r: r.id, ctx.user.roles)).intersection(allowed_sully_roles) == set()
+            set(map(lambda r: r.id, ctx.user.roles)).intersection(allowed_sully_roles)
+            == set()
             and not ctx.user.guild_permissions.manage_roles
         ):
             await ctx.send("You do not have a required role to use this")
@@ -209,7 +214,8 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
             set(map(lambda r: r.id, ctx.author.roles)).intersection(
                 guild_config.roles_allowed_to_setup_autosully
             )
-            == set() and not ctx.author.guild_permissions.manage_roles
+            == set()
+            and not ctx.author.guild_permissions.manage_roles
         ):
             await ctx.send("You do not have a required role to use this")
             raise CheckFailure()

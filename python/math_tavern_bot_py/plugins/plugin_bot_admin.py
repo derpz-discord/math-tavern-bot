@@ -1,10 +1,9 @@
 import subprocess
 
 import pkg_resources
-from disnake.ext import commands
-
 from derpz_botlib.bot_classes import LoggedBot
 from derpz_botlib.cog import LoggedCog
+from disnake.ext import commands
 from math_tavern_bot_py.bot import TavernBot
 
 

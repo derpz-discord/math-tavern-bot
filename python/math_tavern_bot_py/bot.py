@@ -4,10 +4,9 @@ from os import getenv
 
 import disnake
 import sqlalchemy
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-
 from derpz_botlib.bot_classes import ConfigurableCogsBot
 from derpz_botlib.database.db import SqlAlchemyBase
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 
 class TavernBot(ConfigurableCogsBot):
