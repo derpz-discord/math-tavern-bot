@@ -20,22 +20,27 @@ def make_embed(gbook_item: dict) -> disnake.Embed:
     Returns:
 
     """
+    vol_info = gbook_item["volumeInfo"]
     embed = disnake.Embed(
-        title=gbook_item["volumeInfo"]["title"],
-        description=gbook_item["volumeInfo"]["description"],
+        title=vol_info["title"],
+        description=vol_info.get("description", "No description available"),
         url=f"https://www.amazon.com/s?k={gbook_item['volumeInfo']['industryIdentifiers'][0]['identifier']}",
     )
-    embed.set_author(name=", ".join(gbook_item["volumeInfo"]["authors"]))
+    embed.set_author(name=", ".join(vol_info["authors"]))
     embed.add_field(
-        name="ISBN",
-        value=gbook_item["volumeInfo"]["industryIdentifiers"][0]["identifier"],
+        name="ISBN/Identifier",
+        value=vol_info["industryIdentifiers"][0]["identifier"],
     )
-    embed.add_field(name="Publisher", value=gbook_item["volumeInfo"]["publisher"])
-    embed.add_field(name="Page count", value=gbook_item["volumeInfo"]["pageCount"])
-    embed.add_field(
-        name="Categories", value=", ".join(gbook_item["volumeInfo"]["categories"])
-    )
-    embed.set_image(url=gbook_item["volumeInfo"]["imageLinks"]["thumbnail"])
+    if vol_info.get("publisher"):
+        embed.add_field(name="Publisher", value=vol_info["publisher"])
+    if vol_info.get("pageCount"):
+        embed.add_field(name="Page count", value=vol_info["pageCount"])
+    if vol_info.get("categories"):
+        embed.add_field(
+            name="Categories", value=", ".join(vol_info["categories"])
+        )
+    if vol_info.get("imageLinks"):
+        embed.set_image(url=vol_info["imageLinks"]["thumbnail"])
     return embed
 
 
