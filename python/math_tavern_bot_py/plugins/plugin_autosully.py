@@ -52,26 +52,45 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     async def cmd_mass_react(self, ctx: disnake.ApplicationCommandInteraction):
         pass
 
-    @cmd_mass_react.sub_command(name="ban", description="Bans a user from using massreact")
+    @cmd_mass_react.sub_command(
+        name="ban", description="Bans a user from using massreact"
+    )
     @commands.is_owner()
-    async def ban_from_massreact(self, ctx: disnake.ApplicationCommandInteraction, *,
-                                 user: disnake.Member = commands.Param(description="The user to ban from using massreact")):
+    async def ban_from_massreact(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        *,
+        user: disnake.Member = commands.Param(
+            description="The user to ban from using massreact"
+        ),
+    ):
         guild_config = self.get_guild_config(ctx.guild)
         guild_config.banned_from_massreact.add(user.id)
         await self.save_guild_config(ctx.guild, guild_config)
-        await ctx.send(f"Banned {user.mention} from using massreact",
-                       allowed_mentions=disnake.AllowedMentions.none())
+        await ctx.send(
+            f"Banned {user.mention} from using massreact",
+            allowed_mentions=disnake.AllowedMentions.none(),
+        )
 
-    @cmd_mass_react.sub_command(name="unban",
-                                description="Unbans a user from using massreact")
+    @cmd_mass_react.sub_command(
+        name="unban", description="Unbans a user from using massreact"
+    )
     @commands.is_owner()
-    async def unban_from_massreact(self, ctx: disnake.ApplicationCommandInteraction, *,
-                                 user: disnake.Member = commands.Param(description="The user to unban from using massreact")):
+    async def unban_from_massreact(
+        self,
+        ctx: disnake.ApplicationCommandInteraction,
+        *,
+        user: disnake.Member = commands.Param(
+            description="The user to unban from using massreact"
+        ),
+    ):
         guild_config = self.get_guild_config(ctx.guild)
         guild_config.banned_from_massreact.discard(user.id)
         await self.save_guild_config(ctx.guild, guild_config)
-        await ctx.send(f"Unbanned {user.mention} from using massreact",
-                       allowed_mentions=disnake.AllowedMentions.none())
+        await ctx.send(
+            f"Unbanned {user.mention} from using massreact",
+            allowed_mentions=disnake.AllowedMentions.none(),
+        )
 
     @cmd_auto_sully.sub_command(
         description="Sets the emoji which will be used to sully users"
@@ -256,7 +275,15 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
         if ctx.author.id in guild_config.banned_from_massreact:
             await ctx.send("You are banned from using massreact")
             raise CheckFailure()
+
         message = await ctx.fetch_message(ctx.message.reference.message_id)
+        if (
+            emoji.id == guild_config.sully_emoji
+            and message.author.id == self.bot.owner_id
+        ):
+            sully_emoji = await message.guild.fetch_emoji(emoji.id)
+            await ctx.send(f"I'm not going to sully my owners {str(sully_emoji)}")
+            return
         await message.add_reaction(emoji)
         # TODO: Bad naming
         emoji_id = emoji.id if isinstance(emoji, disnake.Emoji) else emoji
