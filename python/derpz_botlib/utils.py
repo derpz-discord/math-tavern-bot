@@ -10,6 +10,8 @@ from disnake.ext.commands import CommandError, Context
 
 def fmt_user(user: Union[disnake.User, disnake.Member]) -> str:
     """Formats a user to username#discriminator"""
+    if user.discriminator == 0:
+        return f"{user.name}"
     return f"{user.name}#{user.discriminator}"
 
 

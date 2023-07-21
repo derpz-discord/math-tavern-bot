@@ -23,6 +23,7 @@ class AutoSullyConfig(CogConfiguration):
     sully_emoji: Optional[int] = None
     sully_users: set[int] = set()
     roles_allowed_to_setup_autosully: set[int] = set()
+    banned_from_massreact: set[int] = set()
 
 
 class AutoSullyRequest(BaseModel):
@@ -46,6 +47,31 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
     @commands.slash_command(name="autosully")
     async def cmd_auto_sully(self, ctx: disnake.ApplicationCommandInteraction):
         pass
+
+    @commands.slash_command(name="massreact")
+    async def cmd_mass_react(self, ctx: disnake.ApplicationCommandInteraction):
+        pass
+
+    @cmd_mass_react.sub_command(name="ban", description="Bans a user from using massreact")
+    @commands.is_owner()
+    async def ban_from_massreact(self, ctx: disnake.ApplicationCommandInteraction, *,
+                                 user: disnake.Member = commands.Param(description="The user to ban from using massreact")):
+        guild_config = self.get_guild_config(ctx.guild)
+        guild_config.banned_from_massreact.add(user.id)
+        await self.save_guild_config(ctx.guild, guild_config)
+        await ctx.send(f"Banned {user.mention} from using massreact",
+                       allowed_mentions=disnake.AllowedMentions.none())
+
+    @cmd_mass_react.sub_command(name="unban",
+                                description="Unbans a user from using massreact")
+    @commands.is_owner()
+    async def unban_from_massreact(self, ctx: disnake.ApplicationCommandInteraction, *,
+                                 user: disnake.Member = commands.Param(description="The user to unban from using massreact")):
+        guild_config = self.get_guild_config(ctx.guild)
+        guild_config.banned_from_massreact.discard(user.id)
+        await self.save_guild_config(ctx.guild, guild_config)
+        await ctx.send(f"Unbanned {user.mention} from using massreact",
+                       allowed_mentions=disnake.AllowedMentions.none())
 
     @cmd_auto_sully.sub_command(
         description="Sets the emoji which will be used to sully users"
@@ -227,6 +253,9 @@ class AutoSullyPlugin(DatabaseConfigurableCog[AutoSullyConfig]):
             if emoji.guild != ctx.guild:
                 await ctx.send("The emoji must be from this server")
                 raise commands.EmojiNotFound(argument=str(emoji))
+        if ctx.author.id in guild_config.banned_from_massreact:
+            await ctx.send("You are banned from using massreact")
+            raise CheckFailure()
         message = await ctx.fetch_message(ctx.message.reference.message_id)
         await message.add_reaction(emoji)
         # TODO: Bad naming
